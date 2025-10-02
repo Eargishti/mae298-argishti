@@ -1,0 +1,62 @@
+0.00006503927209526 = Nose head Critical point
+0.02924107726831627 = t of (-5, 10) Perpendicular Slope Mode 1
+0.01344683946893492 = t of (-5, -10) Perpendicular Slope Mode 2
+1.00893041130000000 = t of trailing edge.
+
+For first cycle, ntip * 2 + backtrace = label of repetetence, back to 0. 
+
+For second + cycle, ntip * 2 + 2 * backtrace + 1 = label of repetetence, back to 0.  
+
+Total poitns = loop1 + (j + nodes - 1) loop2 ;
+
+loop1 = 2*(2*ntip   + backtrace) 
+loop2 = 2*(2*ntip + 2*backtrace + 1);
+
+BR(0.00) = loop1 + (j + nodes - 1 - 1) loop2  + 2 ntip + 4 backtrace + 2;
+BR(0.05) = loop1 + (j + nodes - 1 - 1) loop2  + 2 ntip + 4 backtrace + 2;
+TP(0.00) = BR(0.00) - 2 * backtrace - 2;
+SP1(0.00) = BR(0.00) - 2 * backtrace;
+
+TOTAL FACES ITERATION 1 = 5 * (ntip + backtrace) + 1 + 4 * (backtrace) + 5 * ntip
+gcc -g yongf.c -o b -lm && ./b
+
+gcc -g mongf.c -o b -lm && ./b
+
+gcc -g oldmongf.c -o ref -lm && ./ref
+
+gcc -g dongf.c -o b -lm && ./b
+gcc -g gongf.c -o b -lm && ./b
+
+gcc getcell.c -o cec && ./cec
+  typedef enum { 
+  AEROFOIL, 0
+  NORTH,  1	
+  SOUTH, 2
+  EAST,  3
+  WEST,  4
+  IN,  5
+  OUT, 6
+  INTLET, 7 
+  OUTLET, 8
+  TOP, 9
+  BOTTOM, 10 
+  REVERSE  11
+  } facecode;
+
+BOTTOM LEFT point =  t2n + k * loop2;
+TOP LEFT point = loop1 + (k - 1) * loop2 + 2 * ncrit + 2 * mp;
+BOTTOM RIGHT point = loop1 + k * loop2 + 2 * ntip + 4 * bc + 2;
+TOP RIGHT point = loop1 + k * loop2 + 2 * ntip + 2 * bc;
+165
+xclip -selection cliboard temp.txt
+sed -n 'A,Bp' file.txt
+sed -n 'a,bp' filename | nl
+
+cat filename.txt | head -n B | tail -n $((B - A + 1)) | cat -n
+sed -i 'N_LINEi\TEXT_TO_INSERT' FILENAME
+sed -i '16i\26664' points
+grep "search_string" filename.txt
+5119284942
+paraview -style=default -stylesheet=/home/edgar/phys164/style.qss
+
+
