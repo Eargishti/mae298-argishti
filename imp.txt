@@ -22,6 +22,8 @@ gcc -g yongf.c -o b -lm && ./b
 
 gcc -g mongf.c -o b -lm && ./b
 
+gcc -g matrix.c -o faytrix -lm && ./faytrix
+
 gcc -g oldmongf.c -o ref -lm && ./ref
 
 gcc -g dongf.c -o b -lm && ./b
@@ -59,4 +61,4 @@ grep "search_string" filename.txt
 5119284942
 paraview -style=default -stylesheet=/home/edgar/phys164/style.qss
 
-
+// discord.gg/wRBqM5KCTA

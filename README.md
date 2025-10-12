@@ -6,6 +6,11 @@ gcc -g mongf.c -o b -lm && ./b
 
 Now to use source: 
 
+
+To compile and run matrix:
+
+gcc -g matrix.c -o faytrix && ./faytrix
+
 ./b [0 or 1] [file name]
 
 

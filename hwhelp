@@ -1,0 +1,18 @@
+3.
+second order system
+find poles
+input V(s) = 50
+step respond second order system
+you can treat the 28 as the peak value
+yes steady state value 
+can get damping ratio zeta
+peak time 2.12
+can't get settling time. cannot tell from here
+procedure name = system identificaiton
+
+For this phsyicaly system, some of the paramters are not known. 
+
+Tuning responses can help you identify the system paramters.
+You must divide denominator, must have the standard second order system (divide by JL).
+
+2. 

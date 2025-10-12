@@ -1,0 +1,5 @@
+CompileFlags:
+  Add: [-Wno-vla-extension]
+  # (optional) also remove any opposite flags if they sneak in
+  Remove: [-Wvla-extension, -Wvla]
+
