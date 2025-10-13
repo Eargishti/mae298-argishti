@@ -336,11 +336,8 @@ double Det(const Matrix *matrix, Matrix *U) {
 
   for (j = 0; j < matrix->columns; j++) {
     pivot[0] = j;
-    printf("Column = %d\t", j);
 
     for (i = j; i < matrix->rows; i++) {
-      printf("Row = %d\n", i);
-      printf("Working with number %.6lf\n", U->Element[i][j]);
       if (fabs(U->Element[i][j]) <= tol) {
         pivot[0] += !nonzerofound;
         continue;
@@ -354,7 +351,6 @@ double Det(const Matrix *matrix, Matrix *U) {
           det *= -1;
           nonzerofound = 1;
           pivotwasfound = 1;
-          printf("Row swap completed\n");
           continue;
         };
 
@@ -365,8 +361,6 @@ double Det(const Matrix *matrix, Matrix *U) {
           // printf("cof = %.6lf / %.6lf\n", U->Element[i][j],
           // U->Element[j][j]);
           // cof = U->Element[i][k] / U->Element[j][k];
-          printf("%.6lf - = %.6lf * %.6lf\n", U->Element[i][k], cof,
-                 U->Element[j][k]);
           U->Element[i][k] -= cof * U->Element[j][k];
         };
       };
@@ -377,13 +371,68 @@ double Det(const Matrix *matrix, Matrix *U) {
     pivotwasfound = 0;
     cof = 1;
   };
-  printf("Determinant for Matrix %s:\n=\n", matrix->name);
   for (int o = 0; o < matrix->columns; o++) {
-    printf("%.6lf *", product[o]);
     det *= product[o];
   };
 
+  printf("\nDet(%s) = %.7lf\n", matrix->name, det);
+
   return det;
+};
+
+double Tran(Matrix matrix, Matrix *T) {
+  int i = 0;
+  int j = 0;
+  *T = matrix;
+  T->rows = matrix.columns;
+  T->columns = matrix.rows;
+
+  for (i = 0; i < matrix.columns; i++) {
+    for (j = 0; j < matrix.rows; j++) {
+      T->Element[i][j] = matrix.Element[j][i];
+    };
+  };
+  printf("\n\n");
+  PrintMatrixData(T, 0);
+
+  return 0.0f;
+};
+
+double Inverse(Matrix *matrix, Matrix *Inv) { return 0.0f; };
+
+void Multiply(Matrix *A, Matrix *B) {
+  Matrix C;
+  if (A->columns != B->rows) {
+    printf("Columns of Matrix A not Equal to rows of Matrix B, can't multiply "
+           "(%d x %d) x (%d x %d)\n",
+           A->rows, A->columns, B->rows, B->columns);
+
+    return;
+  };
+  int i = 0;
+  int j = 0;
+  C.rows = A->rows;
+  C.columns = B->columns;
+  int i1 = 0;
+  int j1 = 0;
+  C.name[0] = ' ';
+  C.name[1] = '\n';
+  C.name[2] = '\0';
+
+  for (j1 = 0; j1 < C.columns; j1++) {
+
+    for (i1 = 0; i1 < C.rows; i1++) {
+
+      for (i = 0; i < B->rows; i++) {
+
+        C.Element[i1][j1] += A->Element[i1][i] * B->Element[i][j1];
+      };
+    };
+  };
+  printf("\n\n%s x %s = \n", A->name, B->name);
+  PrintMatrixData(&C, 0);
+
+  return;
 };
 
 int main(int argc, char *argv[]) {
@@ -410,10 +459,13 @@ int main(int argc, char *argv[]) {
 
   SaveFileMatrixData(matrixfiles[0], matrices, MatrixID, argv[1]);
 
-  double Deter1;
+  // double Deter1;
 
-  Deter1 = Det(&matrices[0], &U);
+  // Deter1 = Det(&matrices[0], &U);
+  // Tran(matrices[0], &U);
+  Multiply(&matrices[0], &matrices[1]);
 
   fprintf(stdout, "\nName: %lf\n", matrices[5].Element[0][4]);
   fprintf(stdout, "\nName: %lf\n", matrices[5].Element[0][5]);
+  printf("\nsqrt(500 ') = %.8Lf", 12 * sqrtl(500.0L));
 };
