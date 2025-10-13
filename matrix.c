@@ -9,6 +9,7 @@
 #define MAX_SIZE 50
 #define MAX_NUMBER_OF_MATRICES 50
 #define BUFFER_SIZE 256
+#define tol 1E-15
 
 typedef enum { variable_name, matrix_type, matrix_values } Reading_Type;
 
@@ -266,6 +267,7 @@ void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID,
 
   // matrices[2]->rows = 4;
   while (fgets(Buffer, BUFFER_SIZE, matrixfile)) {
+
     GetVariableName(Buffer, &matrices[k], filename, linenumber, matrixfile);
 
     fgets(Buffer, BUFFER_SIZE, matrixfile);
@@ -294,6 +296,96 @@ void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID,
   };
 };
 
+void PrintMatrixData(Matrix *matrices, int k) {
+
+  printf("Variable name: |%s|\n", matrices[k].name);
+  printf("%d x %d\n", matrices[k].rows, matrices[k].columns);
+  for (int i = 0; i < matrices[k].rows; i++) {
+    for (int j = 0; j < matrices[k].columns; j++) {
+      printf("%lf\t", matrices[k].Element[i][j]);
+    };
+    printf("\n");
+  };
+  printf("\n");
+};
+
+double Det(const Matrix *matrix, Matrix *U) {
+  // LU Decomposition
+
+  if (matrix->rows != matrix->columns) {
+    printf("Determinant not defined for non-square matrices. Matrix %s is %d x "
+           "%d\n",
+           matrix->name, matrix->rows, matrix->columns);
+    return 0.0f;
+  };
+
+  int pivot[2] = {0};
+
+  // memcpy(U, matrix, sizeof(Matrix));
+  *U = *matrix;
+  PrintMatrixData(U, 0);
+  double row[MAX_SIZE] = {0};
+  double det = 1;
+  int k = 0;
+  int nonzerofound = 0;
+  int pivotwasfound = 0;
+  double cof = 1;
+  double product[matrix->columns];
+  int i = 0;
+  int j = 0;
+
+  for (j = 0; j < matrix->columns; j++) {
+    pivot[0] = j;
+    printf("Column = %d\t", j);
+
+    for (i = j; i < matrix->rows; i++) {
+      printf("Row = %d\n", i);
+      printf("Working with number %.6lf\n", U->Element[i][j]);
+      if (fabs(U->Element[i][j]) <= tol) {
+        pivot[0] += !nonzerofound;
+        continue;
+
+      } else {
+        if (pivot[0] != j && nonzerofound == 0 && pivotwasfound == 0) {
+          memcpy(row, U->Element[j], MAX_SIZE * sizeof(double));
+          memcpy(U->Element[j], U->Element[pivot[0]],
+                 MAX_SIZE * sizeof(double));
+          memcpy(U->Element[pivot[0]], row, MAX_SIZE * sizeof(double));
+          det *= -1;
+          nonzerofound = 1;
+          pivotwasfound = 1;
+          printf("Row swap completed\n");
+          continue;
+        };
+
+        i += (!pivotwasfound);
+        pivotwasfound = 1;
+        cof = U->Element[i][j] / U->Element[j][j];
+        for (k = j; k < matrix->columns; k++) {
+          // printf("cof = %.6lf / %.6lf\n", U->Element[i][j],
+          // U->Element[j][j]);
+          // cof = U->Element[i][k] / U->Element[j][k];
+          printf("%.6lf - = %.6lf * %.6lf\n", U->Element[i][k], cof,
+                 U->Element[j][k]);
+          U->Element[i][k] -= cof * U->Element[j][k];
+        };
+      };
+    }
+    product[j] = U->Element[j][j];
+
+    nonzerofound = 0;
+    pivotwasfound = 0;
+    cof = 1;
+  };
+  printf("Determinant for Matrix %s:\n=\n", matrix->name);
+  for (int o = 0; o < matrix->columns; o++) {
+    printf("%.6lf *", product[o]);
+    det *= product[o];
+  };
+
+  return det;
+};
+
 int main(int argc, char *argv[]) {
   //  infoprint();
   int ID;
@@ -301,6 +393,8 @@ int main(int argc, char *argv[]) {
   MatrixID = &ID;
   *MatrixID = 0;
   Matrix *matrices;
+
+  Matrix U;
   matrices = malloc(MAX_NUMBER_OF_MATRICES * sizeof(Matrix));
 
   FILE **matrixfiles;
@@ -315,4 +409,11 @@ int main(int argc, char *argv[]) {
   AllocateFiles(argc, argv, &matrixfiles);
 
   SaveFileMatrixData(matrixfiles[0], matrices, MatrixID, argv[1]);
+
+  double Deter1;
+
+  Deter1 = Det(&matrices[0], &U);
+
+  fprintf(stdout, "\nName: %lf\n", matrices[5].Element[0][4]);
+  fprintf(stdout, "\nName: %lf\n", matrices[5].Element[0][5]);
 };
