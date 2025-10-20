@@ -8,7 +8,7 @@ typedef struct {
 
 } integral;
 
-long double f(long double x) { return (1 / (x + cosl(x))); };
+long double f(long double x) { return (x * x - cosl(x) + sinl(x) / x); };
 
 integral trapezoidal(long double x0, long double x1, int n) {
   integral I1;
@@ -33,11 +33,12 @@ int main() {
   long double x0, x1;
   int n;
   integral I1;
-  x0 = 0;
+  x0 = 1;
   x1 = 5;
-  n = 15000;
-  printf("f(x) =  1 / (1 + cos (x) )\n");
+  n = 150;
+  printf("f(x) =  (x * x - cosl(x) + sinl(x) / x)\n");
+
   I1 = trapezoidal(x0, x1, n);
   printf("x0 = %.5Lf, x1 = %.5Lf, n = %d\n", x0, x1, n);
-  printf("I = %.7Lf\n", I1.computed);
+  printf("I = %.9Lf\n", I1.computed);
 };

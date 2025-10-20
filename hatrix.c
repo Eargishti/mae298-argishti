@@ -9,8 +9,8 @@
 #define MAX_SIZE 50
 #define MAX_NUMBER_OF_MATRICES 50
 #define BUFFER_SIZE 256
-#define tol 1E-13
-#define VARIABLE_SIZE 8
+#define tol 1E-15
+#define VARIABLE_SIZE 6
 
 typedef enum { variable_name, matrix_type, matrix_values } Reading_Type;
 
@@ -34,10 +34,13 @@ typedef struct {
 typedef struct {
   char name[BUFFER_SIZE];
   char3 Variables[MAX_SIZE][MAX_SIZE];
-  uint8_t rows;
-  uint8_t columns;
 
 } StringMatrix;
+
+union Elements {
+  double d;
+  char3 c;
+};
 
 void infoprint() {
   printf("\nWelcome: Program specifications:\n");
@@ -77,68 +80,17 @@ void AllocateFiles(int argc, char *argv[], FILE ***matrixfiles) {
   };
 };
 
-void fMatrixPrint(Matrix *matrices, StringMatrix *stringmatrix, MatrixType *m1,
-                  FILE *matrixfile, int *count) {
+void PrintMatrixData(Matrix *matrices, int k) {
 
-  if (matrixfile == NULL) {
-    printf("\nmatrixfile was nulll\n");
-    exit(1);
-  };
-  fprintf(matrixfile, "\n\n");
-  if (*m1 == Numerical) {
-    fprintf(matrixfile, "%s = \n\n", matrices->name);
-    fprintf(matrixfile, "%d x %d\n\n", matrices->rows, matrices->columns);
-    for (int i = 0; i < matrices->rows; i++) {
-      for (int j = 0; j < matrices->columns; j++) {
-        fprintf(matrixfile, "%lf\t", matrices->Element[i][j]);
-      };
-      fprintf(matrixfile, "\n");
-    };
-    fprintf(matrixfile, "\n");
-  };
-
-  if (*m1 == Symbolic) {
-    fprintf(matrixfile, "%s\n", stringmatrix->name);
-    fprintf(matrixfile, "%d x %d\n", stringmatrix->rows, stringmatrix->columns);
-    for (int i = 0; i < stringmatrix->rows; i++) {
-      for (int j = 0; j < stringmatrix->columns; j++) {
-
-        fprintf(matrixfile, "%s\t", stringmatrix->Variables[i][j].c);
-      };
-      fprintf(matrixfile, "\n");
-    };
-    fprintf(matrixfile, "\n");
-  };
-  (*count)++;
-};
-
-void PrintMatrixData(Matrix *matrices, StringMatrix *stringmatrix,
-                     MatrixType *m1) {
-
-  if (*m1 == Numerical) {
-    printf("Variable name: |%s|\n", matrices->name);
-    printf("%d x %d\n", matrices->rows, matrices->columns);
-    for (int i = 0; i < matrices->rows; i++) {
-      for (int j = 0; j < matrices->columns; j++) {
-        printf("%lf\t", matrices->Element[i][j]);
-      };
-      printf("\n");
+  printf("Variable name: |%s|\n", matrices[k].name);
+  printf("%d x %d\n", matrices[k].rows, matrices[k].columns);
+  for (int i = 0; i < matrices[k].rows; i++) {
+    for (int j = 0; j < matrices[k].columns; j++) {
+      printf("%lf\t", matrices[k].Element[i][j]);
     };
     printf("\n");
   };
-
-  if (*m1 == Symbolic) {
-    printf("Variable name: |%s|\n", stringmatrix->name);
-    printf("%d x %d\n", stringmatrix->rows, stringmatrix->columns);
-    for (int i = 0; i < stringmatrix->rows; i++) {
-      for (int j = 0; j < stringmatrix->columns; j++) {
-
-        printf("%s\t", stringmatrix->Variables[i][j].c);
-      };
-      printf("\n");
-    };
-    printf("\n");
-  };
+  printf("\n");
 };
 
 void PRintMatrixData(Matrix *matrices, int k) {
@@ -207,16 +159,11 @@ int IsWhiteSpace(char a) {
 }
 
 void GetRowData(char *Buffer, Matrix *matrix1, FILE **matrixfile, int row,
-                mode1 mode, MatrixType *m1, StringMatrix *stringmat) {
+                mode1 mode, MatrixType *m1) {
   int BracketFound[2] = {0};
   int i = 0;
   int valuesread = 0;
   int whitespaces = 1;
-  int letterfound = 0;
-  int sizecounter = 0;
-  int k;
-  int colindex = 0;
-
   char *endptr;
   char *cmprptr;
   if (mode == Brackets && *m1 == Numerical) {
@@ -263,9 +210,9 @@ void GetRowData(char *Buffer, Matrix *matrix1, FILE **matrixfile, int row,
       BracketFound[0] = 1;
 
       for (int j = 0; j < matrix1->columns; j++) {
-        cmprptr = j == 0 ? &Buffer[i] : endptr;
+        cmprptr = j == 0 ? &Buffer[i + 1] : endptr;
         matrix1->Element[row][j] =
-            strtod(j == 0 ? &Buffer[i] : endptr, &endptr);
+            strtod(j == 0 ? &Buffer[i + 1] : endptr, &endptr);
         if (cmprptr != endptr)
           valuesread++;
       };
@@ -278,51 +225,24 @@ void GetRowData(char *Buffer, Matrix *matrix1, FILE **matrixfile, int row,
       goto Rer;
     };
   };
-
-  if (mode == NoBrackets && *m1 == Symbolic) {
-  Rerdniga:
-    whitespaces = 0;
+  if (mode == Brackets && *m1 == Symbolic) {
+  Rerd:
+    whitespaces = 1;
     valuesread = 0;
-    sizecounter = 1;
-    colindex = 0;
-
     for (i = 0; i < strlen(Buffer); i++) {
-      k = 0;
-
-      if (IsWhiteSpace(Buffer[i]) || Buffer[i] == '\n') {
+      if (IsWhiteSpace(Buffer[i])) {
         whitespaces++;
         continue;
       };
-
-      if (IsLetter(Buffer[i])) {
-        stringmat->Variables[row][colindex].c[k] = Buffer[i];
-        k++;
-        i++;
-        while (IsLetter(Buffer[i]) || IsNumber(Buffer[i]) || Buffer[i] == '_') {
-          stringmat->Variables[row][colindex].c[k] = Buffer[i];
-          k++;
-          i++;
-        };
-        stringmat->Variables[row][colindex].c[k] = '\0';
-        colindex++;
-        valuesread++;
-        continue;
-      };
-
-      if (!IsLetter(Buffer[i])) {
-        printf("In string %s, the first character %c wasn't a letter", Buffer,
-               Buffer[i]);
-        exit(1);
-      };
     };
 
-    if (valuesread < stringmat->columns) {
+    if (valuesread == 0) {
       fgets(Buffer, BUFFER_SIZE, *matrixfile);
-      goto Rerdniga;
+      goto Rerd;
     };
   };
 
-  if (valuesread != matrix1->columns && valuesread != stringmat->columns) {
+  if (valuesread != matrix1->columns) {
     printf("In %s, failed to read %d values\n", Buffer, matrix1->columns);
     exit(1);
   };
@@ -331,8 +251,7 @@ void GetRowData(char *Buffer, Matrix *matrix1, FILE **matrixfile, int row,
 ;
 
 void GetVariableName(char *string1, Matrix *matrix1, char *filename,
-                     int *linenumber, FILE *matrixfile, MatrixType *m1,
-                     StringMatrix *stringmat1) {
+                     int *linenumber, FILE *matrixfile, MatrixType *m1) {
   int len = strlen(string1);
   char c;
   int i = 0;
@@ -340,10 +259,12 @@ void GetVariableName(char *string1, Matrix *matrix1, char *filename,
   int WasThereEqual = 0;
   int EqualPosition = 0;
   int whitespaces = 0;
-  int firstletterfound = 0;
-  char *whichptr;
 
   c = string1[0];
+  if (c == '$') {
+    *m1 = Symbolic;
+  } else
+    *m1 = Numerical;
 
   if (!IsLetter(c) && !IsWhiteSpace(c) && c != '\n') {
     printf("c = %d\n", c);
@@ -355,7 +276,6 @@ void GetVariableName(char *string1, Matrix *matrix1, char *filename,
 
 Reread2:
   whitespaces = 0;
-  firstletterfound = 0;
 
   for (i = 0; i < strlen(string1); i++) {
     c = string1[i];
@@ -365,23 +285,10 @@ Reread2:
       continue;
     };
 
-    if (!IsLetter(c) && !IsNumber(c) && !IsWhiteSpace(c) && c != '$' ||
-        c == '\\') {
+    if (!IsLetter(c) && !IsNumber(c) && !IsWhiteSpace(c) || c == '\\') {
 
     } else {
-      if (firstletterfound == 0) {
-        if (c == '$') {
-          *m1 = Symbolic;
-        } else {
-          *m1 = Numerical;
-        };
-      };
-      //*m1 += (!firstletterfound) * Symbolic * (c == '$');
-
-      firstletterfound = 1;
-
       matrix1->name[j] = c;
-      stringmat1->name[j] = c;
       j++;
     }
 
@@ -389,7 +296,6 @@ Reread2:
       WasThereEqual = 1;
       EqualPosition = i;
       matrix1->name[j] = '\0';
-      stringmat1->name[j] = '\0';
       return;
       break;
       goto edge1;
@@ -411,14 +317,11 @@ edge1:
   };
 };
 
-void GetToType(FILE *matrixfile, Matrix *matrices, int MatrixID, char *Buffer,
-               StringMatrix *stringmat) {
+void GetToType(FILE *matrixfile, Matrix *matrices, int MatrixID, char *Buffer) {
   char c[2];
   int i = 0;
   int xWasFound = 0;
   matrices->rows = atoi(Buffer);
-  stringmat->rows = atoi(Buffer);
-
   int whitespaces = 0;
 
   if (matrices->rows <= 0 && Buffer[0] != '\n' && !IsWhiteSpace(Buffer[0])) {
@@ -438,9 +341,6 @@ Reread3:
       xWasFound = 1;
       matrices->columns = atoi(&Buffer[i + 1]);
       matrices->rows = atoi(&Buffer[0]);
-      stringmat->columns = atoi(&Buffer[i + 1]);
-      stringmat->rows = atoi(&Buffer[0]);
-
       if (matrices->columns <= 0) {
         printf("The type string %s isn't in the format n x m, where n,m>0\n",
                Buffer);
@@ -461,11 +361,10 @@ Reread3:
 };
 
 void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID,
-                        char *filename, StringMatrix *stringmats, int *count) {
+                        char *filename) {
   Reading_Type R = variable_name;
   mode1 mode = NoBrackets;
   MatrixType m1 = Numerical;
-
   printf(mode == NoBrackets ? "File Reading Mode: NoBrackets\n"
                             : "File Reading Mode: With Brackets\n");
 
@@ -473,38 +372,41 @@ void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID,
   int ln = 0;
   int *linenumber;
   linenumber = &ln;
-  (*count) = 0;
+
   int k = 0;
 
   // matrices[2]->rows = 4;
   while (fgets(Buffer, BUFFER_SIZE, matrixfile)) {
 
-    GetVariableName(Buffer, &matrices[k], filename, linenumber, matrixfile, &m1,
-                    &stringmats[k]);
+    GetVariableName(Buffer, &matrices[k], filename, linenumber, matrixfile,
+                    &m1);
 
     fgets(Buffer, BUFFER_SIZE, matrixfile);
 
-    GetToType(matrixfile, &matrices[k], 2, Buffer, &stringmats[k]);
+    GetToType(matrixfile, &matrices[k], 2, Buffer);
 
     fgets(Buffer, BUFFER_SIZE, matrixfile);
 
     for (int i = 0; i < matrices[k].rows; i++) {
-      GetRowData(Buffer, &matrices[k], &matrixfile, i, mode, &m1,
-                 &stringmats[k]);
+      GetRowData(Buffer, &matrices[k], &matrixfile, i, mode, &m1);
       if (i != matrices[k].rows - 1) {
         fgets(Buffer, BUFFER_SIZE, matrixfile);
       };
     };
-    PrintMatrixData(&matrices[k], &stringmats[k], &m1);
+    printf("Variable name: |%s|\n", matrices[k].name);
+    printf("%d x %d\n", matrices[k].rows, matrices[k].columns);
+    for (int i = 0; i < matrices[k].rows; i++) {
+      for (int j = 0; j < matrices[k].columns; j++) {
+        printf("%lf\t", matrices[k].Element[i][j]);
+      };
+      printf("\n");
+    };
+    printf("\n");
     k++;
-    m1 = 0;
-    count++;
   };
 };
 
-double Det(const Matrix *matrix, Matrix *U, int printflag, Matrix *colvector,
-           int Swapper[MAX_SIZE][2], int *swapcount) {
-  const MatrixType m11 = Numerical;
+double Det(const Matrix *matrix, Matrix *U) {
   // LU Decomposition
 
   if (matrix->rows != matrix->columns) {
@@ -512,109 +414,13 @@ double Det(const Matrix *matrix, Matrix *U, int printflag, Matrix *colvector,
            "%d\n",
            matrix->name, matrix->rows, matrix->columns);
     return 0.0f;
-  } else if (printflag)
-    printf("\nRows == columns\n");
-
-  if (colvector->rows != matrix->rows) {
-    printf("Column vector in Det function must equivalent number of rows. "
-           "%s.rows != %s.rows",
-           colvector->name, matrix->name);
-    exit(1);
   };
-  int pivot[2] = {0};
-
-  // memcpy(U, matrix, sizeof(Matrix));
-  *U = *matrix;
-
-  // PrintMatrixData(U, NULL, &m11);
-  double row[MAX_SIZE] = {0};
-  double det = 1;
-  int k = 0;
-  int nonzerofound = 0;
-  int pivotwasfound = 0;
-  double cof = 1;
-  double product[matrix->columns];
-  int i = 0;
-  int j = 0;
-  double columnvalue = 1;
-
-  for (j = 0; j < matrix->columns; j++) {
-    pivot[0] = j;
-
-    for (i = j; i < matrix->rows; i++) {
-
-      if (fabs(U->Element[i][j]) <= tol) {
-        pivot[0] += !nonzerofound;
-        continue;
-
-      } else {
-        if (pivot[0] != j && nonzerofound == 0 && pivotwasfound == 0) {
-          Swapper[*swapcount][0] = j;
-          Swapper[*swapcount][1] = pivot[0];
-          (*swapcount)++;
-          columnvalue = colvector->Element[j][0];
-          colvector->Element[j][0] = colvector->Element[pivot[0]][0];
-          colvector->Element[pivot[0]][0] = columnvalue;
-          memcpy(row, U->Element[j], MAX_SIZE * sizeof(double));
-          memcpy(U->Element[j], U->Element[pivot[0]],
-                 MAX_SIZE * sizeof(double));
-          memcpy(U->Element[pivot[0]], row, MAX_SIZE * sizeof(double));
-          det *= -1;
-          nonzerofound = 1;
-          pivotwasfound = 1;
-          continue;
-        };
-
-        i += (!pivotwasfound);
-        pivotwasfound = 1;
-        cof = U->Element[i][j] / U->Element[j][j];
-        colvector->Element[i][0] -= cof * colvector->Element[j][0];
-        for (k = j; k < matrix->columns; k++) {
-          // printf("cof = %.6lf / %.6lf\n", U->Element[i][j],
-          // U->Element[j][j]);
-          // cof = U->Element[i][k] / U->Element[j][k];
-          U->Element[i][k] -= cof * U->Element[j][k];
-        };
-      };
-    }
-
-    product[j] = U->Element[j][j];
-
-    nonzerofound = 0;
-    pivotwasfound = 0;
-    cof = 1;
-  };
-  for (int o = 0; o < matrix->columns; o++) {
-    det *= product[o];
-  };
-  /*  printf("Upper Triangular matrix:\n");
-    PrintMatrixData(U, NULL, (MatrixType[]){0});
-    printf("colvec:\n");
-    PrintMatrixData(colvector, NULL, (MatrixType[]){0}); */
-  if (printflag)
-    printf("\nDet(%s) = %.7lf\n", matrix->name, det);
-
-  return det;
-};
-
-double SimpleDet(const Matrix *matrix, Matrix *U, int printflag) {
-  const MatrixType m11 = Numerical;
-  // LU Decomposition
-
-  if (matrix->rows != matrix->columns) {
-    printf("Determinant not defined for non-square matrices. Matrix %s is %d x "
-           "%d\n",
-           matrix->name, matrix->rows, matrix->columns);
-    return 0.0f;
-  } else if (printflag)
-    printf("\nRows == columns\n");
 
   int pivot[2] = {0};
 
   // memcpy(U, matrix, sizeof(Matrix));
   *U = *matrix;
-
-  // PrintMatrixData(U, NULL, &m11);
+  PrintMatrixData(U, 0);
   double row[MAX_SIZE] = {0};
   double det = 1;
   int k = 0;
@@ -665,10 +471,8 @@ double SimpleDet(const Matrix *matrix, Matrix *U, int printflag) {
   for (int o = 0; o < matrix->columns; o++) {
     det *= product[o];
   };
-  // printf("Upper Triangular matrix:\n");
-  // PrintMatrixData(U, NULL, (MatrixType[]){0});
-  if (printflag)
-    printf("\nDet(%s) = %.7lf\n", matrix->name, det);
+
+  printf("\nDet(%s) = %.7lf\n", matrix->name, det);
 
   return det;
 };
@@ -686,18 +490,12 @@ double Tran(Matrix matrix, Matrix *T) {
     };
   };
   printf("\n\n");
-  PrintMatrixData(T, NULL, 0);
+  PrintMatrixData(T, 0);
 
   return 0.0f;
 };
 
-double Inverse(Matrix *matrix, Matrix *Inv) {
-  if (matrix->rows != matrix->columns) {
-    printf("Inverse matrix rows aren't columns\n");
-  };
-
-  return 0.0f;
-};
+double Inverse(Matrix *matrix, Matrix *Inv) { return 0.0f; };
 
 void Add(Matrix *A, Matrix *B) {
   Matrix C;
@@ -714,7 +512,7 @@ void Add(Matrix *A, Matrix *B) {
   };
   C.name[0] = '\0';
   printf("\n\n%s + %s = \n", A->name, B->name);
-  PrintMatrixData(&C, NULL, 0);
+  PrintMatrixData(&C, 0);
 };
 
 void Subtract(Matrix *A, Matrix *B) {
@@ -733,7 +531,7 @@ void Subtract(Matrix *A, Matrix *B) {
   };
   C.name[0] = '\0';
   printf("\n\n%s - %s = \n", A->name, B->name);
-  PrintMatrixData(&C, NULL, 0);
+  PrintMatrixData(&C, 0);
 };
 
 void Multiply(Matrix *A, Matrix *B) {
@@ -766,97 +564,12 @@ void Multiply(Matrix *A, Matrix *B) {
     };
   };
   printf("\n\n%s x %s = \n", A->name, B->name);
-  PrintMatrixData(&C, NULL, 0);
+  PrintMatrixData(&C, 0);
 
   return;
 };
 
-void CreateRandomSquareMatrix(Matrix *matrix, unsigned int size, int max) {
-  strcpy(matrix->name, "CreatedMatrix");
-  matrix->rows = size;
-  matrix->columns = size;
-
-  for (int i = 0; i < matrix->rows; i++) {
-    for (int j = 0; j < matrix->rows; j++) {
-      matrix->Element[i][j] = (double)(rand() % max);
-      matrix->Element[i][j] *= 1 - 1 * (rand() % max < 19);
-    };
-  };
-};
-
-void MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols) {
-  if (matrix->rows != matrix->columns) {
-    printf("\nNo unique solution exists since matrix %s isn't square, its %d x "
-           "%d\n",
-           matrix->name, matrix->rows, matrix->columns);
-    return;
-  };
-
-  if (vars->columns != 1 || cols->columns != 1) {
-    printf("Matrix %s or %s is %d x %d or %d x %d and isn't a column vector, "
-           "perhaps take its transpose first",
-           vars->name, cols->name, vars->rows, vars->columns, cols->rows,
-           cols->columns);
-    return;
-  };
-
-  if (!(cols->rows == vars->rows && vars->rows == matrix->rows)) {
-    printf("The rows [%s] {%s} = {%s} aren't equivalennt.\n", matrix->name,
-           vars->name, cols->name);
-    return;
-  };
-  int i = 1;
-  int j = 1;
-  int pivotwasfound = 0;
-  int k = 0;
-  int pivot = 0;
-  double cof = 1;
-
-  Matrix U;
-  Matrix C;
-  U = *matrix;
-  C = *cols;
-  int Swapper[MAX_SIZE][2];
-  int Swapcount = 0;
-
-  Det(matrix, &U, 0, cols, Swapper, &Swapcount);
-  printf("\nUpper Triangular Matrix:\n");
-  PrintMatrixData(&U, NULL, (MatrixType[]){0});
-  printf("\nOriginal column Matrix:\n");
-  PrintMatrixData(cols, NULL, (MatrixType[]){0});
-  for (j = 1; j < U.columns; j++) {
-    pivot = j;
-    for (i = j - 1; i >= 0; i--) {
-      cof = U.Element[i][j] / U.Element[j][j];
-      cols->Element[i][0] -= cof * cols->Element[j][0];
-      for (k = j; k < U.columns; k++) {
-        U.Element[i][k] -= cof * U.Element[j][k];
-      };
-    };
-  };
-  for (int o0 = 0; o0 < vars->rows; o0++) {
-    C.Element[o0][0] = cols->Element[o0][0] / U.Element[o0][o0];
-  };
-  /*printf("Swapcount = %d\n", Swapcount);
-  for (int oi = 0; oi < Swapcount; oi++) {
-    printf("Swapping %s and %s\n", vars->Variables[Swapper[oi][0]][0].c,
-           vars->Variables[Swapper[oi][1]][0].c);
-    cof = C.Element[Swapper[oi][0]][0];
-    C.Element[Swapper[oi][0]][0] = C.Element[Swapper[oi][1]][0];
-    C.Element[Swapper[oi][1]][0] = cof;
-  };*/
-
-  printf("\nU.columns = %d\tU.rows = %d\n", U.columns, U.rows);
-  printf("\nDiagonalized Matrix:\n");
-  PrintMatrixData(&U, NULL, (MatrixType[]){0});
-  printf("\nNew Column Matrix:\n");
-  PrintMatrixData(cols, NULL, (MatrixType[]){0});
-
-  printf("vars.rows = %d\n", vars->rows);
-  for (int ou = 0; ou < vars->rows; ou++) {
-    printf("%s = %.8lf\n", vars->Variables[ou][0].c, C.Element[ou][0]);
-  };
-};
+void MatrixVectorSolve() {};
 
 int main(int argc, char *argv[]) {
   //  infoprint();
@@ -865,15 +578,9 @@ int main(int argc, char *argv[]) {
   MatrixID = &ID;
   *MatrixID = 0;
   Matrix *matrices;
-  StringMatrix *stringmats;
-  MatrixType m11 = Numerical;
-
-  Matrix *temp;
-  temp = malloc(sizeof(Matrix));
 
   Matrix U;
   matrices = malloc(MAX_NUMBER_OF_MATRICES * sizeof(Matrix));
-  stringmats = malloc(MAX_NUMBER_OF_MATRICES * sizeof(StringMatrix));
 
   FILE **matrixfiles;
   switch (argc) {
@@ -885,18 +592,24 @@ int main(int argc, char *argv[]) {
     break;
   };
   AllocateFiles(argc, argv, &matrixfiles);
-  int count = 0;
-  SaveFileMatrixData(matrixfiles[0], matrices, MatrixID, argv[1], stringmats,
-                     &count);
 
-  fclose(matrixfiles[0]);
-  CreateRandomSquareMatrix(temp, 3, 100);
-  PrintMatrixData(temp, NULL, (MatrixType[]){0});
-  matrixfiles[0] = fopen(argv[1], "a");
+  SaveFileMatrixData(matrixfiles[0], matrices, MatrixID, argv[1]);
 
-  //  fMatrixPrint(temp, NULL, (MatrixType[]){0}, matrixfiles[0], &count);
-  MatrixVectorSolve(&matrices[3], &stringmats[2], &matrices[1]);
+  Multiply(&matrices[0], &matrices[1]);
 
-  int Swapper[MAX_SIZE][2];
-  int *swapcount = 0;
+  printf("\n\nSize of Matrix: %zu\n\n", sizeof(Matrix));
+  printf("\n\nSize of StringMatrix: %zu\n\n", sizeof(StringMatrix));
+  /*klocal(1,1) = EAL;
+  klocal(1,4) = -EAL;
+  klocal(2,2) = k12;
+  klocal(2,3) = k6;
+  klocal(2,5) = -k12;
+  klocal(2,6) = k6;
+  klocal(3,3) = k4;
+  klocal(3,5) = -k6;
+  klocal(3,6) = k2;
+  klocal(4,4) = EAL;
+  klocal(5,5) = k12;
+  klocal(5,6) = -k6;
+  klocal(6,6) = k4; */
 };
