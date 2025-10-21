@@ -20,7 +20,10 @@ SP1(0.00) = BR(0.00) - 2 * backtrace;
 TOTAL FACES ITERATION 1 = 5 * (ntip + backtrace) + 1 + 4 * (backtrace) + 5 * ntip
 gcc -g yongf.c -o b -lm && ./b
 
+
 gcc -g mongf.c -o b -lm && ./b
+
+gcc -g sup.c -o rog -lm && ./rog
 
 gcc -g matrix.c -o faytrix -lm && ./faytrix
 

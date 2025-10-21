@@ -141,6 +141,32 @@ void PrintMatrixData(Matrix *matrices, StringMatrix *stringmatrix,
   };
 };
 
+void SidebySide(Matrix *matrix1, Matrix *matrix2, FILE *f1) {
+  // fprintf(f1, "\n");
+  for (int i = 0; i < matrix1->rows; i++) {
+    fprintf(f1, "| ");
+    for (int j = 0; j < matrix1->columns + matrix2->columns; j++) {
+      if (j < matrix1->columns) {
+        fprintf(f1, matrix1->Element[i][j] < 0.0 ? "%.4lf  " : "%.5lf ",
+                matrix1->Element[i][j]);
+      };
+      if (j == matrix1->columns) {
+        fprintf(f1,
+                matrix2->Element[i][j - matrix1->columns] < 0.0 ? "| %.4lf  "
+                                                                : "| %.5lf ",
+                matrix2->Element[i][j - matrix1->columns]);
+      };
+      if (j > matrix1->columns) {
+        fprintf(f1,
+                matrix2->Element[i][j - matrix1->columns] < 0.0 ? "%.4lf  "
+                                                                : "%.5lf ",
+                matrix2->Element[i][j - matrix1->columns]);
+      };
+    };
+    fprintf(f1, "|\n");
+  };
+};
+
 void PRintMatrixData(Matrix *matrices, int k) {
   printf("Variable name: |%s|\n", matrices[k].name);
   printf("%d x %d\n", matrices[k].rows, matrices[k].columns);
@@ -502,6 +528,41 @@ void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID,
   };
 };
 
+void Multiply(Matrix *A, Matrix *B) {
+  Matrix C;
+  if (A->columns != B->rows) {
+    printf("Columns of Matrix A not Equal to rows of Matrix B, can't multiply "
+           "(%d x %d) x (%d x %d)\n",
+           A->rows, A->columns, B->rows, B->columns);
+
+    return;
+  };
+  int i = 0;
+  int j = 0;
+  C.rows = A->rows;
+  C.columns = B->columns;
+  int i1 = 0;
+  int j1 = 0;
+  C.name[0] = ' ';
+  C.name[1] = '\n';
+  C.name[2] = '\0';
+
+  for (j1 = 0; j1 < C.columns; j1++) {
+
+    for (i1 = 0; i1 < C.rows; i1++) {
+
+      for (i = 0; i < B->rows; i++) {
+
+        C.Element[i1][j1] += A->Element[i1][i] * B->Element[i][j1];
+      };
+    };
+  };
+  printf("\n\n%s x %s = \n", A->name, B->name);
+  PrintMatrixData(&C, NULL, (MatrixType[]){0});
+
+  return;
+};
+
 double Det(const Matrix *matrix, Matrix *U, int printflag, Matrix *colvector,
            int Swapper[MAX_SIZE][2], int *swapcount) {
   const MatrixType m11 = Numerical;
@@ -695,6 +756,89 @@ double Inverse(Matrix *matrix, Matrix *Inv) {
   if (matrix->rows != matrix->columns) {
     printf("Inverse matrix rows aren't columns\n");
   };
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  int l = 0;
+  Inv->rows = matrix->rows;
+  Inv->columns = matrix->columns;
+
+  for (i = 0; i < Inv->rows; i++) {
+
+    Inv->Element[i][i] = 1;
+  };
+  memcpy(Inv->name, matrix->name, strlen(matrix->name));
+  i = strlen(matrix->name);
+
+  Inv->name[i] = '_';
+  Inv->name[i + 1] = 'I';
+  Inv->name[i + 2] = 'n';
+  Inv->name[i + 3] = 'v';
+  Inv->name[i + 4] = '\0';
+  int pivotwasfound = 0;
+  int nonzerofound = 0;
+  int pivot = 0;
+  double cof = 1;
+  Matrix U;
+  double det1 = SimpleDet(matrix, &U, 0);
+  if (fabs(det1) <= tol) {
+    printf("Inverse not defined for 0-determinant matrix\n");
+    printf("det(%s) = %.15lf\n", matrix->name, det1);
+    exit(1);
+  };
+  U = *matrix;
+
+  double rowMat[MAX_SIZE] = {0};
+  double rowInv[MAX_SIZE] = {0};
+  printf("Inverse Matrix before\n");
+  for (j = 0; j < matrix->columns; j++) {
+    pivot = j;
+    pivotwasfound = 0;
+    for (int i = j; i < matrix->rows; i++) {
+      if (fabs(U.Element[i][j]) <= tol && !pivotwasfound) {
+        pivot++;
+        continue;
+      };
+      if (fabs(U.Element[i][j]) >= tol && !pivotwasfound) {
+        pivotwasfound = 1;
+        if (pivot > j) {
+          memcpy(rowMat, U.Element[j], MAX_SIZE * sizeof(double));
+          memcpy(rowInv, Inv->Element[j], MAX_SIZE * sizeof(double));
+          memcpy(U.Element[j], U.Element[pivot], MAX_SIZE * sizeof(double));
+          memcpy(Inv->Element[j], Inv->Element[pivot],
+                 MAX_SIZE * sizeof(double));
+          memcpy(U.Element[pivot], rowMat, MAX_SIZE * sizeof(double));
+          memcpy(Inv->Element[pivot], rowInv, MAX_SIZE * sizeof(double));
+        };
+        for (l = 0; l < matrix->rows; l++) {
+          if (l == j) {
+            continue;
+          };
+          cof = U.Element[l][j] / U.Element[j][j];
+          for (k = j; k < U.columns; k++) {
+            U.Element[l][k] -= cof * U.Element[j][k];
+          };
+          for (k = 0; k < Inv->columns; k++) {
+            Inv->Element[l][k] -= cof * Inv->Element[j][k];
+          };
+        };
+        goto Invexit;
+      };
+    };
+
+  Invexit:
+  };
+
+  for (i = 0; i < U.rows; i++) {
+    cof = U.Element[i][i];
+    U.Element[i][i] = 1.0;
+    for (j = 0; j < U.columns; j++) {
+      Inv->Element[i][j] /= cof;
+    };
+  };
+  PrintMatrixData(matrix, NULL, (MatrixType[]){Numerical});
+  PrintMatrixData(Inv, NULL, (MatrixType[]){Numerical});
+  Multiply(matrix, Inv);
 
   return 0.0f;
 };
@@ -736,50 +880,24 @@ void Subtract(Matrix *A, Matrix *B) {
   PrintMatrixData(&C, NULL, 0);
 };
 
-void Multiply(Matrix *A, Matrix *B) {
-  Matrix C;
-  if (A->columns != B->rows) {
-    printf("Columns of Matrix A not Equal to rows of Matrix B, can't multiply "
-           "(%d x %d) x (%d x %d)\n",
-           A->rows, A->columns, B->rows, B->columns);
+void CreateRandomMatrix(Matrix *matrix, unsigned int rows, unsigned int columns,
+                        int max, int scale, int ID) {
 
-    return;
-  };
-  int i = 0;
-  int j = 0;
-  C.rows = A->rows;
-  C.columns = B->columns;
-  int i1 = 0;
-  int j1 = 0;
-  C.name[0] = ' ';
-  C.name[1] = '\n';
-  C.name[2] = '\0';
-
-  for (j1 = 0; j1 < C.columns; j1++) {
-
-    for (i1 = 0; i1 < C.rows; i1++) {
-
-      for (i = 0; i < B->rows; i++) {
-
-        C.Element[i1][j1] += A->Element[i1][i] * B->Element[i][j1];
-      };
-    };
-  };
-  printf("\n\n%s x %s = \n", A->name, B->name);
-  PrintMatrixData(&C, NULL, 0);
-
-  return;
-};
-
-void CreateRandomSquareMatrix(Matrix *matrix, unsigned int size, int max) {
   strcpy(matrix->name, "CreatedMatrix");
-  matrix->rows = size;
-  matrix->columns = size;
+  if (rows > MAX_SIZE || columns > MAX_SIZE) {
+    printf("%d > %d, %d > %d", rows, MAX_SIZE, columns, MAX_SIZE);
+    exit(1);
+  };
+  matrix->rows = rows;
+  matrix->columns = columns;
 
   for (int i = 0; i < matrix->rows; i++) {
     for (int j = 0; j < matrix->rows; j++) {
-      matrix->Element[i][j] = (double)(rand() % max);
-      matrix->Element[i][j] *= 1 - 1 * (rand() % max < 19);
+      matrix->Element[i][j] = (double)(rand() % max) / (double)scale;
+      int zc = (rand() % max) < 19;
+      int s1 = rand() % 2;
+      int g1 = s1 - (s1 + !s1) * !s1;
+      matrix->Element[i][j] *= g1 * zc;
     };
   };
 };
@@ -890,12 +1008,14 @@ int main(int argc, char *argv[]) {
                      &count);
 
   fclose(matrixfiles[0]);
-  CreateRandomSquareMatrix(temp, 3, 100);
-  PrintMatrixData(temp, NULL, (MatrixType[]){0});
-  matrixfiles[0] = fopen(argv[1], "a");
+  //  CreateRandomSquareMatrix(temp, 3, 100);
+  // PrintMatrixData(temp, NULL, (MatrixType[]){0});
+  // matrixfiles[0] = fopen(argv[1], "a");
 
   //  fMatrixPrint(temp, NULL, (MatrixType[]){0}, matrixfiles[0], &count);
-  MatrixVectorSolve(&matrices[3], &stringmats[2], &matrices[1]);
+  // MatrixVectorSolve(&matrices[3], &stringmats[2], &matrices[1]);
+  Matrix Inv;
+  Inverse(&matrices[3], &Inv);
 
   int Swapper[MAX_SIZE][2];
   int *swapcount = 0;
