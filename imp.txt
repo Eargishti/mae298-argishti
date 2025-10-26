@@ -26,6 +26,7 @@ gcc -g mongf.c -o b -lm && ./b
 gcc -g sup.c -o rog -lm && ./rog
 
 gcc -g matrix.c -o faytrix -lm && ./faytrix
+gcc -g main.c matrix.c -o faytrix -lm && ./faytrix NoBrackets
 
 gcc -g oldmongf.c -o ref -lm && ./ref
 
