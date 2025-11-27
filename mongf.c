@@ -362,7 +362,6 @@ void headerfill() {
   fclose(boundary);
 };
 
-typedef enum { four, TopAndBottom } OPTIONB;
 void WriteToPoint(const void *restrict x, const void *restrict y,
                   const void *restrict z0, const void *restrict label,
                   FILE *pointoutput) {
@@ -401,8 +400,7 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
                long double xL, int mp, int r_num, int r_dem, long double xR,
                long double yU, long double yB, int backtrace, trace *trace1,
                long double slopeshift, FILE *faces[3], FILE *cells[3],
-               FILE *owner[2], FILE *neighbour[2], FILE *boundar[2],
-               OPTIONB opt1) {
+               FILE *owner[2], FILE *neighbour[2], FILE *boundar[2]) {
   pointoutput[0] = fopen("figaro1.txt", "a");
   pointoutput[1] = fopen("figarosafe.txt", "a");
   pointoutput[2] = fopen("points", "a");
@@ -990,6 +988,7 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
     };
   };
   // fgets(buffer, sizeof(buffer), dafile);
+
   fprintf(pointoutput[2], "\n )\n");
   fclose(pointoutput[0]);
   fclose(pointoutput[1]);
@@ -1001,6 +1000,8 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
   faces[2] = fopen("facecheck", "w");
   owner[0] = fopen("owner", "a");
   owner[1] = fopen("owncheck", "w");
+  FILE *cellIDs = fopen("cellID", "wb");
+  FILE *cellNum = fopen("aerocells", "w");
 
   neighbour[0] = fopen("neighbour", "a");
   neighbour[1] = fopen("neighbourcheck", "w");
@@ -1089,8 +1090,20 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
   // Aerofoil
   bcode = AEROFOIL;
   flabel = startFace[Aerofoil];
+  int lamd = 2 * bc * (j + nodes - 1);
+  fwrite(&lamd, sizeof(int), 1, cellIDs);
+  fprintf(cellNum, "%d\n", lamd);
+  for (int i = 0; i < nFaces[Aerofoil] - 1; i++) {
+    lamd += (i % 2) * (j + nodes - 1 + j + nodes - 2);
+    lamd += (!(i % 2)) * 1;
+    fwrite(&lamd, sizeof(int), 1, cellIDs);
+    fprintf(cellNum, "%d\n", lamd);
+  };
+  fclose(cellIDs);
+  fclose(cellNum);
 
   for (int i = 0; i < nFaces[Aerofoil]; i++) {
+
     AerofoilF[i] = flabel;
     flabel++;
   };
@@ -1980,6 +1993,7 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
   boundar[0] = fopen("boundary", "a");
   boundar[1] = fopen("Truebound", "w");
 
+  JMax = 8;
   fprintf(boundar[0], "\n%d\n(\n", JMax);
 
   printf("\nAbout to print boundary\n");
@@ -2390,14 +2404,14 @@ void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter) {
   printf("fefOG = %d\n", fefOG);
 
   if (fefOG > 1 && (*defaulter == 0)) {
-    long double A = array->T[0] / (powl((long double)(fefOG), 3));
+    long double A = array->T[0] / (powl((long double)(fefOG), 2));
 
     array->T = realloc(array->T, (array->size + fefOG) * sizeof(long double));
 
     memmove(array->T + fefOG, array->T, (array->size) * sizeof(long double));
     //////////////////////////////////////////////////////////
     for (int i = 0; i < fefOG; i++) {
-      array->T[i] = (A * powl(((long double)(i)), 3));
+      array->T[i] = (A * powl(((long double)(i)), 2));
     };
     array->size = array->size + fefOG;
   };
@@ -2490,6 +2504,11 @@ void infoprint() {
   printf("cpar = ...\n");
   printf("tpar = ...\n");
 }
+
+void Liftvals(int *ntip, int *jnodes) {
+  FILE *cellIDs = fopen("cellID", "wb");
+  FILE *cellNum = fopen("aerocells", "w");
+};
 void descriptionprint() {
   printf("\n\n Where xL is the leftmost coordinate of the mesh, xR is the "
          "rightmost coordiante of the mesh, yU is the uppermost coordinate of "
@@ -2502,8 +2521,11 @@ void descriptionprint() {
       "is the number of points between the horizontal median point and the "
       "point which connects the bottom left point of the mesh\n, gp is the "
       "number of points between the mp-th point and the tip of the airfoil\n, "
-      "cpar is the coefficient which dicates spacing of points\n, and tpar is "
-      "the coefficient which dictates the density of the tail.\n");
+      "cpar is the coefficient which dicates spacing of points, roughly "
+      "0.123\n, and tpar is "
+      "the coefficient which dictates the density of the tail. More "
+      "specifically, between the tail tip, and the edge of the mesh, there are "
+      "tpar * mp number of points\n");
 };
 
 int main(int argc, char *argv[]) {
@@ -3024,10 +3046,11 @@ t2fix:
   long double cpar;
 
   backtrace = Mesh1.Tpar * mp;
+  // backtrace = Tpar * mp
   cpar = Mesh1.Cpar / (long double)Mesh1.mp;
 
   arcadjust(array, aero, &ncrit, &defaulter);
-  foilcompute(points, foil1, aero, array, t3, backtrace, trace1, xR);
+  foilcompute(points, foil1, aero, array, t3, backtrace, trace1, Mesh1.xR);
 
   printf("\nMesh Data:\n");
   printf("xL: %.5Lf\t%.5Lf\n", xL, Mesh1.xL);
@@ -3046,9 +3069,11 @@ t2fix:
   printf("slopeshift: %.5Lf\n", slopeshift);
 
   printf("ncrit before =%d\n", ncrit);
-  OPTIONB opty = four;
+  int jnodes = 1;
 
   linestack(points, foil1, foilzoinks, aero, cpar, *array, ncrit, Mesh1.xL, mp,
             Mesh1.r_num, Mesh1.r_dem, Mesh1.xR, Mesh1.yU, Mesh1.yB, backtrace,
-            trace1, slopeshift, faces, cells, owner, neighbour, boundary, opty);
+            trace1, slopeshift, faces, cells, owner, neighbour, boundary);
+  printf("Mesh1.xR = %Lf\n", Mesh1.xR);
+  printf("xR = %Lf\n", xR);
 }

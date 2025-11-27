@@ -68,7 +68,7 @@ void GetVariableName(char *string1, Matrix *matrix1, char *filename, int *linenu
 
 void GetToType(FILE *matrixfile, Matrix *matrices, int MatrixID, char *Buffer, StringMatrix *stringmat);
 
-void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID, char *filename, StringMatrix *stringmats, int *count);
+void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID, char *filename, StringMatrix *stringmats, int *count, int m[MAX_SIZE]);
 
 void Multiply(Matrix *A, Matrix *B, Matrix *D);
 
@@ -89,3 +89,15 @@ void CreateRandomMatrix(Matrix *matrix, unsigned int rows, unsigned int columns,
 void InitializeValues(Matrix *matrix);
 
 void MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols);
+
+void MatrixEnumForm(FILE *header, Matrix *matrices, StringMatrix *stringmats, int *ID, int m[MAX_SIZE]);
+
+//Homework
+Matrix elk(long double A, long double Izz, long double Iyy, long double J, long double E, long double nu, long double L);
+
+Matrix GammaMat(long double beta, long double xaxis[3]);
+
+//Project rows by columns,
+
+void AssignFixity();
+

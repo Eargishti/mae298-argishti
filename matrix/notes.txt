@@ -1,0 +1,47 @@
+xi,yi,zi -> L -> xj_yj_zj
+
+2 points connected by a member of length L
+
+L = sqrt (blah)
+
+x j = coord (ends (i,2), 1)
+
+x_i = coord (ends(i,1) m1)
+
+y_j == (...,2)
+
+z_j = (...,3)
+
+local x vector
+
+x_axis(i,1) = x_j - x_ij
+
+x_axis(i,2) = y_j - y_ij
+
+for i = 1:nelm
+	xj = coord (ends, (i, 2), 1)
+	xi = coord (ends, (i, i), 1)
+	yj = coord (ends, (i, 2), 2)
+	yi = coord (ends, (i, i), 2)
+	zj = coord (ends, (i, 2), 3)
+	zi = coord (ends, (i, i), 3)
+	% L(i) = sqrt()
+
+	x_axis(i,1) = xj - xi
+	#complete other 2
+
+end
+
+  // NODE ID's
+  // Member ID's: DOFs a ends of the element
+  /*printf("ID = %d\n", ID);
+  Matrix Kn;
+  Inverse(&matrices[0], &Kn);
+  Matrix Klocal;
+  Multiply(&matrices[1], &matrices[2], &Prod);
+  Tran(matrices[2], &Tran1);
+  Multiply(&matrices[4], &matrices[3], &Klocal); */
+
+  // Multiply(&matrices[0], &matrices[2], &Prod);
+  // Multiply(&matrices[1], &Prod, &Final);
+  //

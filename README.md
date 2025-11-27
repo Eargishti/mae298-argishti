@@ -15,3 +15,5 @@ gcc -g matrix.c -o faytrix && ./faytrix
 
 
 
+
+19175

@@ -47,7 +47,7 @@ void fMatrixPrint(Matrix *matrices, StringMatrix *stringmatrix, MatrixType *m1,
                   FILE *matrixfile) {
 
   if (matrixfile == NULL) {
-    printf("\nmatrixfile was null\n");
+    printf("\nmatrixfile was nulll\n");
     exit(1);
   };
 
@@ -931,6 +931,14 @@ void MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols) {
   for (int o0 = 0; o0 < vars->rows; o0++) {
     C.Element[o0][0] = cols->Element[o0][0] / U.Element[o0][o0];
   };
+  /*printf("Swapcount = %d\n", Swapcount);
+  for (int oi = 0; oi < Swapcount; oi++) {
+    printf("Swapping %s and %s\n", vars->Variables[Swapper[oi][0]][0].c,
+           vars->Variables[Swapper[oi][1]][0].c);
+    cof = C.Element[Swapper[oi][0]][0];
+    C.Element[Swapper[oi][0]][0] = C.Element[Swapper[oi][1]][0];
+    C.Element[Swapper[oi][1]][0] = cof;
+  };*/
 
   printf("\nU.columns = %d\tU.rows = %d\n", U.columns, U.rows);
   printf("\nDiagonalized Matrix:\n");
@@ -945,25 +953,10 @@ void MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols) {
 };
 
 void MatrixEnumForm(FILE *header, Matrix *matrices, StringMatrix *stringmats,
-                    int *ID, int m[MAX_SIZE]) {
+                    int *ID) {
   header = fopen("enums.h", "w");
-  int k = 4;
-  char name[BUFFER_SIZE];
+  int k = 0;
   while (matrices[k].rows != 0 || stringmats[k].rows != 0) {
-    if (m[k] == Numerical) {
-    };
-    if (m[k] == Symbolic) {
-    };
-  };
-};
-
-void SymmetricUpperT(Matrix *matrix) {
-  int i = 0;
-  int j = 0;
-  for (j = 0; j < matrix->rows; j++) {
-    for (i = 0; i < j; i++) {
-      matrix->Element[j][i] = matrix->Element[i][j];
-    };
   };
 };
 
@@ -971,99 +964,115 @@ Matrix elk(long double A, long double Izz, long double Iyy, long double J,
            long double E, long double nu, long double L) {
   Matrix Elk;
   char Nom[] = "estiff";
-  memcpy(Elk.name, Nom, sizeof(Nom));
+  memcpy(Elk.name, Nom, BUFFER_SIZE);
   Elk.rows = 12;
   Elk.columns = 12;
   InitializeValues(&Elk);
-  Elk.Element[0][0] = A * E / L;
-  Elk.Element[0][6] = -A * E / L;
-  Elk.Element[1][1] = 12 * Izz * E / (L * L * L);
-  Elk.Element[1][5] = 6 * Izz * E / (L * L);
-  Elk.Element[1][7] = -12 * Izz * E / (L * L * L);
-  Elk.Element[1][11] = 6 * Izz * E / (L * L);
-  Elk.Element[2][2] = 12 * Iyy * E / (L * L * L);
-  Elk.Element[2][4] = -6 * Iyy * E / (L * L);
-  Elk.Element[2][8] = -12 * Iyy * E / (L * L * L);
-  Elk.Element[2][10] = -6 * Iyy * E / (L * L);
-  Elk.Element[3][3] = J * E / (2 * (1 + nu) * L);
-  Elk.Element[3][9] = -J * E / (2 * (1 + nu) * L);
-  Elk.Element[4][4] = 4 * Iyy * E / L;
-  Elk.Element[4][8] = 6 * Iyy * E / (L * L);
-  Elk.Element[4][10] = 2 * Iyy * E / L;
-  Elk.Element[5][5] = 4 * Izz * E / L;
-  Elk.Element[5][7] = -6 * Izz * E / (L * L);
-  Elk.Element[5][11] = 2 * Izz * E / L;
-  Elk.Element[6][6] = A * E / L;
-  Elk.Element[7][7] = 12 * Izz * E / (L * L * L);
-  Elk.Element[7][11] = -6 * Izz * E / (L * L);
-  Elk.Element[8][8] = 12 * Iyy * E / (L * L * L);
-  Elk.Element[8][10] = 6 * Iyy * E / (L * L);
-  Elk.Element[9][9] = J * E / (2 * (1 + nu) * L);
-  Elk.Element[10][10] = 4 * Iyy * E / L;
-  Elk.Element[11][11] = 4 * Izz * E / L;
-  SymmetricUpperT(&Elk);
+  Elk.Element[0][0] = A / L;
+  Elk.Element[0][6] = -A / L;
+  Elk.Element[6][0] = -A / L;
+  Elk.Element[1][1] = 12 * Izz / (L * L * L);
+  Elk.Element[1][5] = 6 * Izz / (L * L);
+  Elk.Element[5][1] = 6 * Izz / (L * L);
+  Elk.Element[1][7] = -12 * Izz / (L * L * L);
+  Elk.Element[7][1] = -12 * Izz / (L * L * L);
+  Elk.Element[1][11] = 6 * Izz / (L * L);
+  Elk.Element[11][1] = 6 * Izz / (L * L);
+  Elk.Element[2][2] = 12 * Iyy / (L * L * L);
+  Elk.Element[2][4] = -6 * Iyy / (L * L);
+  Elk.Element[4][2] = -6 * Iyy / (L * L);
+  Elk.Element[2][8] = -12 * Iyy / (L * L * L);
+  Elk.Element[8][2] = -12 * Iyy / (L * L * L);
+  Elk.Element[2][10] = -6 * Iyy / (L * L);
+  Elk.Element[10][2] = -6 * Iyy / (L * L);
+  Elk.Element[3][3] = J / (2 * (1 + nu) * L);
+  Elk.Element[3][9] = -J / (2 * (1 + nu) * L);
+  Elk.Element[9][3] = -J / (2 * (1 + nu) * L);
+  Elk.Element[4][4] = 4 * Iyy / L;
+  Elk.Element[4][8] = 6 * Iyy / (L * L);
+  Elk.Element[8][4] = 6 * Iyy / (L * L);
+  Elk.Element[10][4] = 2 * Iyy / L;
+  Elk.Element[4][10] = 2 * Iyy / L;
+  Elk.Element[5][5] = 4 * Izz / L;
+  Elk.Element[5][7] = -6 * Izz / (L * L);
+  Elk.Element[7][5] = -6 * Izz / (L * L);
+  Elk.Element[5][11] = 2 * Izz / L;
+  Elk.Element[11][5] = 2 * Izz / L;
+  Elk.Element[6][6] = A / L;
+  Elk.Element[7][7] = 12 * Izz / (L * L * L);
+  Elk.Element[7][11] = -6 * Izz / (L * L);
+  Elk.Element[11][7] = -6 * Izz / (L * L);
+  Elk.Element[8][8] = 12 * Iyy / (L * L * L);
+  Elk.Element[8][10] = 6 * Iyy / (L * L);
+  Elk.Element[10][8] = 6 * Iyy / (L * L);
+  Elk.Element[9][9] = Elk.Element[3][3];
+  Elk.Element[10][10] = 4 * Iyy / L;
+  Elk.Element[11][11] = 4 * Izz / L;
   return Elk;
 };
 
-void norm(long double xaxis[3]) {
-  long double n1 =
-      sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
-  for (int i = 0; i < 3; i++) {
-    xaxis[i] /= n1;
-  };
+long double norm(long double xaxis[3]) {
+  return sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
 };
 Matrix GammaMat(long double beta, long double xaxis[3]) {
   Matrix etran;
-  char Nom[] = "Transformation12x12";
-  memcpy(etran.name, Nom, sizeof(Nom));
+
   etran.rows = 12;
   etran.columns = 12;
+  char Nom[] = "etran";
+  memcpy(etran.name, Nom, BUFFER_SIZE);
 
   long double ztemp[3];
   long double ytemp[3];
-  norm(xaxis);
-
-  /* | i 	j 	k  |
-     | x0	x1	x2 |
-     | 0	1	0  | */
-
+  // zt = xaxis cross y
+  // Array indices 0,1,2 correspond to x, y, and z
+  long double norm1 =
+      sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
+  for (int i = 0; i < 3; i++) {
+    xaxis[i] /= norm1;
+  };
+  // ztemp = xaxis cross (0 1 0)
   ztemp[0] = -xaxis[2];
   ztemp[1] = 0;
   ztemp[2] = xaxis[0];
-  norm(ztemp);
-  /* | i 	j 	k  |
-     | -x2  0   x0  |
-     | x0	x1	x2  | */
 
-  ytemp[0] = -xaxis[0] * xaxis[1];
-  ytemp[1] = xaxis[0] * xaxis[0] + xaxis[2] * xaxis[2];
-  ytemp[2] = -xaxis[2] * xaxis[1];
-  norm(ytemp);
-  long double zaxis[3];
-  long double yaxis[3];
-  zaxis[0] = cosl(beta) * ztemp[0] - sinl(beta) * ytemp[0];
-  zaxis[1] = cosl(beta) * ztemp[1] - sinl(beta) * ytemp[1];
-  zaxis[2] = cosl(beta) * ztemp[2] - sinl(beta) * ytemp[2];
+  for (int i = 0; i < 3; i++) {
+    ztemp[i] /= norm(ztemp);
+    ;
+  };
 
-  yaxis[0] = cosl(beta) * ytemp[0] + sinl(beta) * ztemp[0];
-  yaxis[1] = cosl(beta) * ytemp[1] + sinl(beta) * ztemp[1];
-  yaxis[2] = cosl(beta) * ytemp[2] + sinl(beta) * ztemp[2];
+  // yt = ztemp cross x
 
+  ytemp[0] = -xaxis[2] * xaxis[1];
+  ytemp[1] = xaxis[2] * xaxis[0] + xaxis[1] * xaxis[2];
+  ytemp[2] = -xaxis[1] * xaxis[1];
+
+  for (int i = 0; i < 3; i++) {
+    ytemp[i] /= norm(ytemp);
+    ;
+  };
+
+  ztemp[1] *= -sin(beta);
+  ztemp[2] *= cos(beta);
+  ytemp[1] *= cos(beta);
+  ytemp[2] *= sin(beta);
+  etran.rows = 12;
+  etran.columns = 12;
   Matrix Gamma;
   Gamma.rows = 3;
   Gamma.columns = 3;
   memcpy(Gamma.Element[0], xaxis, 3 * sizeof(long double));
-  memcpy(Gamma.Element[1], yaxis, 3 * sizeof(long double));
-  memcpy(Gamma.Element[2], zaxis, 3 * sizeof(long double));
-  int mode = 0;
-  int j = 0;
-  int k = 0;
+  memcpy(Gamma.Element[1], ytemp, 3 * sizeof(long double));
+  memcpy(Gamma.Element[2], ztemp, 3 * sizeof(long double));
+
+  InitializeValues(&etran);
+
   for (int i = 0; i < 4; i++) {
-    mode = 4 * i;
-    for (j = 0; j < 3; j++) {
-      for (k = 0; k < 3; k++) {
-        etran.Element[mode + j][mode + k] = Gamma.Element[j][k];
-      }
+    int mode = 3 * i;
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < 3; k++) {
+        etran.Element[j + mode][k + mode] = Gamma.Element[j][k];
+      };
     };
   };
 

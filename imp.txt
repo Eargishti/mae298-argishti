@@ -66,3 +66,5 @@ grep "search_string" filename.txt
 paraview -style=default -stylesheet=/home/edgar/phys164/style.qss
 
 // discord.gg/wRBqM5KCTA
+
+/home/edgar/myFoamUtils/printCelldata
