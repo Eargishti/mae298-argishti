@@ -45,3 +45,53 @@ end
   // Multiply(&matrices[0], &matrices[2], &Prod);
   // Multiply(&matrices[1], &Prod, &Final);
   //
+
+
+
+
+fixity matrix: 
+0 or any other number like 23.32f = fixed dof, known displacement;
+NaN = free dof, unknown displacement;
+
+
+properties: 
+nelements x 6
+element i: A,  Izz, Iyy, J, E, nu, Beta
+.
+.
+.
+
+nodeID = DOFs at node
+nnodes x 6
+ux	uy	uz	θx θy θz
+
+
+
+nele: number of elements.
+ends: nele x 2
+(i, 1) -> First Node of element i
+(i , 2) -> Second Node of element i
+
+Deflection
+
+
+
+
+nodeID = 
+
+4 x 6
+
+1	2	3	4	5	6
+7	8	9	10	11	12
+13	14	15	16	17	18
+19	20	21	22	23	24
+
+
+mem_id = 
+
+4 x 6
+
+1	2	3	4	5	6	7	8	9	10	11	12
+7	8	9	10	11	12	13	14	15	16	17	18
+19	20	21	22	23	24	13	14	15	16	17	18
+13	14	15	16	17	18	1	2	3	4	5	6	

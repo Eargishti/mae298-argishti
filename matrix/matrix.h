@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #define MAX_SIZE 50
-#define MAX_NUMBER_OF_MATRICES 50
+#define MAX_NUMBER_OF_MATRICES 40
 #define BUFFER_SIZE 256
 #define tol 1E-13
 #define VARIABLE_SIZE 8
@@ -45,13 +45,13 @@ void infoprint();
 void AllocateFiles(int argc, char *argv[], FILE ***matrixfiles);
 
 
-void fMatrixPrint(Matrix *matrices, StringMatrix *stringmatrix, MatrixType *m1,FILE *matrixfile);;
+void fMatrixPrint(const Matrix *matrices, StringMatrix *stringmatrix, MatrixType *m1,FILE *matrixfile);;
 
 void PrintMatrixData(Matrix *matrices, StringMatrix *stringmatrix, MatrixType *m1);
 
 
 void SidebySide(Matrix *matrix1, Matrix *matrix2, FILE *f1);
-void PRintMatrixData(Matrix *matrices, int k);
+void PRintMatrixData(const Matrix *matrices);
 
 
 void PrintFileContent(FILE **matrixfiles, int filecount);
@@ -70,7 +70,7 @@ void GetToType(FILE *matrixfile, Matrix *matrices, int MatrixID, char *Buffer, S
 
 void SaveFileMatrixData(FILE *matrixfile, Matrix *matrices, int *MatrixID, char *filename, StringMatrix *stringmats, int *count, int m[MAX_SIZE]);
 
-void Multiply(Matrix *A, Matrix *B, Matrix *D);
+Matrix Multiply(const Matrix *A,const Matrix *B);
 
 double Det(const Matrix *matrix, Matrix *U, int printflag, Matrix *colvector, int Swapper[MAX_SIZE][2], int *swapcount);
 
@@ -78,26 +78,37 @@ double SimpleDet(const Matrix *matrix, Matrix *U, int printflag);
 
 double Tran(Matrix matrix, Matrix *T);
 
-double Inverse(Matrix *matrix, Matrix *Inv);
+Matrix Transpose(const Matrix *matrix);
+
+double Inverse(const Matrix *matrix, Matrix *Inv);
+
+Matrix inverse(const Matrix *matrix);
 
 void Add(Matrix *A, Matrix *B);
 
-void Subtract(Matrix *A, Matrix *B);
+Matrix Subtract(const Matrix *A,const Matrix *B);
 
 void CreateRandomMatrix(Matrix *matrix, unsigned int rows, unsigned int columns, int max, int scale, int *ID);
 
 void InitializeValues(Matrix *matrix);
 
-void MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols);
+Matrix MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols);
 
 void MatrixEnumForm(FILE *header, Matrix *matrices, StringMatrix *stringmats, int *ID, int m[MAX_SIZE]);
 
 //Homework
-Matrix elk(long double A, long double Izz, long double Iyy, long double J, long double E, long double nu, long double L);
+Matrix elk(double A, double Izz, double Iyy, double J, double E, double nu, double L);
 
-Matrix GammaMat(long double beta, long double xaxis[3]);
+Matrix GammaMat(double beta, double xaxis[3]);
 
 //Project rows by columns,
+//concen, fixity, 
+void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen, Matrix *Kff, StringMatrix *u, Matrix *ends);
 
-void AssignFixity();
+void PrintFreeDOF(int is2D, Matrix *K, Matrix *fixity);
 
+void MatrixDefineForm(FILE *header, Matrix *matrices, StringMatrix *stringmats, int *ID, int m[MAX_SIZE]);
+
+void AssignVariables(StringMatrix *u, int nnodes);
+
+Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity, Matrix *properties, Matrix *ends, StringMatrix *u, Matrix *concen);
