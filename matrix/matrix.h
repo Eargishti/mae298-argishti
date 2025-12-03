@@ -22,6 +22,7 @@ typedef struct {
 } Matrix;
 
 typedef struct {
+
 char name[BUFFER_SIZE];
 double Element[12][12];
 uint8_t rows;
@@ -137,3 +138,4 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity, Matrix 
 void AssignForceVars(StringMatrix *u, int nnodes);
 
 Matrix DebugMultiply(const Matrix *A, const Matrix *B, int problematicrow[2]);
+

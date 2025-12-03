@@ -3,3 +3,4 @@
 #define fixity 2
 #define properties 3
 #define ends 4
+#define qloads 5

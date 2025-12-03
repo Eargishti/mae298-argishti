@@ -14,7 +14,9 @@ int main(int argc, char *argv[]) {
   temp = malloc(sizeof(Matrix));
 
   Matrix U;
+
   matrices = malloc(MAX_NUMBER_OF_MATRICES * sizeof(Matrix));
+
   stringmats = malloc(MAX_NUMBER_OF_MATRICES * sizeof(StringMatrix));
 
   FILE **matrixfiles;

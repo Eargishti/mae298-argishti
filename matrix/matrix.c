@@ -1466,15 +1466,14 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
   uf.rows = nFree;
   uf.columns = 1;
   Matrix loadF = {"Fl", {0}, nFree, 1};
+  MatrixType m1 = Numerical;
 
   for (int ig = 0; ig < ndofs; ++ig) {
     int row = freeIndex[ig];
     if (row < 0)
-      continue; // skip fixed DOF rows
-
+      continue;
     loadF.Element[row][0] = load.Element[ig][0];
     strcpy(uf.Variables[row][0].c, u->Variables[ig][0].c);
-
     for (int jg = 0; jg < ndofs; ++jg) {
       if (freeIndex[jg] >= 0) {
         int col = freeIndex[jg];
@@ -1485,7 +1484,6 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
   }
   Matrix C;
   C = MatrixVectorSolve(Kff, &uf, &loadF);
-  MatrixType m1 = Numerical;
 
   for (int ig = 0; ig < ndofs; ig++) {
     int row = freeIndex[ig];
@@ -1495,11 +1493,8 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
   };
   Matrix R = {"R", {0.0}, ndofs, 1};
   StringMatrix Rname;
-  int problematicrows[2] = {-1, -7};
-  R = DebugMultiply(K, &Usolution, problematicrows);
-
+  R = Multiply(K, &Usolution);
   AssignForceVars(&Rname, fixity->rows);
-
   for (int ig = 0; ig < fixity->rows; ig++) {
     if (isSupport[ig]) {
       printf("\nnode %d is a support\n\n", ig);
@@ -1523,7 +1518,7 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
     Tu = SmallMultiply(&RotTrans[i], &Tu);
     Fu = SmallMultiply(&KStiff[i], &Tu);
     Faxial[i] = Fu.Element[0][0];
-    printf("\nMember %d axial force: %.15lf\n", i, Faxial[i]);
+    fprintf(stdout, "\nMember %d axial force: %.15lf\n", i, Faxial[i]);
   };
   int sos = 0;
   Matrix fluff = {"ufinal", {0.0}, ndofs, 1};
@@ -1578,6 +1573,8 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
   };
 
   Matrix K = {"Ksys", {0.0}, nnodes * 6, nnodes * 6};
+
+  // A = [3, 1, 4; 44, 3, 4; 1,4,;];
 
   if (properties->rows > ends->rows) {
     printf("Fatal error: %d element properties specificed, however ends->rows "
@@ -1641,27 +1638,11 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
     v = properties->Element[i][5];
     Beta = properties->Element[i][6];
     L = sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
-    // norm(xaxis);
-    if (i == 0 || i == 4) {
-      printf("member %d vec:\n", i);
-      printf("x_z = %.5lf - %.5lf\n", coord_info->Element[nodeJ - 1][2],
-             coord_info->Element[nodeI - 1][2]);
-      printvec(xaxis);
-    };
-    /*   RotTrans = SmallGammaMat(Beta, xaxis);
-       LocStiff = Smallelk(A, Izz, Iyy, J, E, v, L);
-       RotTransT = SmallTranspose(&RotTrans);
-       KMember = SmallMultiply(&LocStiff, &RotTrans);
-       KMember = SmallMultiply(&RotTransT, &KMember); */
-
     RotTrans[i] = SmallGammaMat(Beta, xaxis);
     LocStiff[i] = Smallelk(A, Izz, Iyy, J, E, v, L);
     RotTransT[i] = SmallTranspose(&RotTrans[i]);
     KMember[i] = SmallMultiply(&LocStiff[i], &RotTrans[i]);
     KMember[i] = SmallMultiply(&RotTransT[i], &KMember[i]);
-
-    printf("\n");
-
     for (il = 0; il < 6; il++) {
       memberID[il][i] = (nodeI - 1) * 6 + il;
     };
@@ -1675,9 +1656,6 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
       };
     };
   };
-
-  // PRintMatrixData(&K);
-  // PrintFreeDOF(1, &K, fixity);
   Matrix Kff = {"Kff", {0.0}, 0, 0};
   AssignFixity(&K, fixity, concen, &Kff, u, ends, RotTrans, LocStiff, memberID);
 

@@ -1,6 +1,12 @@
 build1:
 	gcc testmain.c matrix.c -lm -o wenums
 	./wenums finalinfo 
+flof:
+	./wenums finalinfo
+
+gaug:
+	gcc integral.c -lm -o kroit
+	./kroit
 
 all:
 	gcc main.c matrix.c -lm -o faytrix
