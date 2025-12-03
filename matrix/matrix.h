@@ -10,6 +10,7 @@
 #define BUFFER_SIZE 256
 #define tol 1E-13
 #define VARIABLE_SIZE 8
+#define MAX_NUMBER_OF_ELEMENTS 10
 
 typedef struct {
 
@@ -19,6 +20,15 @@ typedef struct {
   uint8_t columns;
 
 } Matrix;
+
+typedef struct {
+char name[BUFFER_SIZE];
+double Element[12][12];
+uint8_t rows;
+uint8_t columns;
+
+
+} SmallMatrix;
 
 
 typedef enum { variable_name, matrix_type, matrix_values } Reading_Type;
@@ -39,6 +49,11 @@ typedef struct {
 
 } StringMatrix;
 
+SmallMatrix SmallMultiply(const SmallMatrix *A, const SmallMatrix *B);
+
+SmallMatrix SmallTranspose(const SmallMatrix *matrix);
+
+void SymmetricSmallUT(SmallMatrix *matrix);
 
 void infoprint();
 
@@ -101,9 +116,15 @@ Matrix elk(double A, double Izz, double Iyy, double J, double E, double nu, doub
 
 Matrix GammaMat(double beta, double xaxis[3]);
 
+
+SmallMatrix Smallelk(double A, double Izz, double Iyy, double J, double E, double nu, double L);
+
+SmallMatrix SmallGammaMat(double beta, double xaxis[3]);
+
+
 //Project rows by columns,
 //concen, fixity, 
-void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen, Matrix *Kff, StringMatrix *u, Matrix *ends);
+void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen, Matrix *Kff, StringMatrix *u, Matrix *ends, SmallMatrix RotTrans[MAX_NUMBER_OF_ELEMENTS], SmallMatrix KStiff[MAX_NUMBER_OF_ELEMENTS], int memberID[12][MAX_NUMBER_OF_ELEMENTS]);
 
 void PrintFreeDOF(int is2D, Matrix *K, Matrix *fixity);
 
@@ -112,3 +133,7 @@ void MatrixDefineForm(FILE *header, Matrix *matrices, StringMatrix *stringmats, 
 void AssignVariables(StringMatrix *u, int nnodes);
 
 Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity, Matrix *properties, Matrix *ends, StringMatrix *u, Matrix *concen);
+
+void AssignForceVars(StringMatrix *u, int nnodes);
+
+Matrix DebugMultiply(const Matrix *A, const Matrix *B, int problematicrow[2]);

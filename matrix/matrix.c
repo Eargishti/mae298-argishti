@@ -41,7 +41,6 @@ void AllocateFiles(int argc, char *argv[], FILE ***matrixfiles) {
     };
   };
 };
-// void AssignDOFs(Matrix *matrices
 
 void fMatrixPrint(const Matrix *matrices, StringMatrix *stringmatrix,
                   MatrixType *m1, FILE *matrixfile) {
@@ -58,7 +57,7 @@ void fMatrixPrint(const Matrix *matrices, StringMatrix *stringmatrix,
     fprintf(matrixfile, "\n");
     for (int i = 0; i < matrices->rows; i++) {
       for (int j = 0; j < matrices->columns; j++) {
-        fprintf(matrixfile, "%+4.4lf\t", matrices->Element[i][j]);
+        fprintf(matrixfile, "%+4.15lf\t", matrices->Element[i][j]);
       };
       fprintf(matrixfile, "\n");
     };
@@ -167,8 +166,6 @@ int IsWhiteSpace(char a) {
     return 0;
   };
 }
-
-int b;
 
 void ShishWhiteSpace(char a, int *value) {
   switch (a) {
@@ -517,12 +514,82 @@ Matrix Multiply(const Matrix *A, const Matrix *B) {
       };
     };
   };
+  return C;
+};
 
-  // printf("\n\n%s x %s = \n", A->name, B->name);
+Matrix DebugMultiply(const Matrix *A, const Matrix *B, int problematicrow[2]) {
 
-  // fMatrixPrint(&C, NULL, (MatrixType[]){Numerical}, stdout);
-  // fMatrixPrint(D, NULL, (MatrixType[]){0}, stdout);
+  Matrix C = {"", {0.0}, A->rows, B->columns};
 
+  if (A->columns != B->rows) {
+    printf("Columns of Matrix A not Equal to rows of Matrix B, can't multiply "
+           "(%d x %d) x (%d x %d)\n",
+           A->rows, A->columns, B->rows, B->columns);
+
+    return C;
+  };
+  int i = 0;
+  int j = 0;
+  C.rows = A->rows;
+  C.columns = B->columns;
+  int i1 = 0;
+  int j1 = 0;
+  int o = 0;
+  int printmode = 0;
+
+  for (j1 = 0; j1 < C.columns; j1++) {
+
+    for (i1 = 0; i1 < C.rows; i1++) {
+      if (i1 == problematicrow[0] || i1 == problematicrow[1]) {
+        printmode = 1;
+      };
+
+      for (i = 0; i < B->rows; i++) {
+
+        C.Element[i1][j1] += A->Element[i1][i] * B->Element[i][j1];
+        if (printmode) {
+          printf("%s(%d)(%d) += %.7lf * %.7lf\n", "R", i1, j1,
+                 A->Element[i1][i], B->Element[i][j1]);
+        };
+      };
+      printmode = 0;
+    };
+  };
+  return C;
+};
+
+SmallMatrix SmallMultiply(const SmallMatrix *A, const SmallMatrix *B) {
+  SmallMatrix C = {"", {0.0}, A->rows, B->columns};
+
+  if (A->columns != B->rows) {
+    printf("Columns of Matrix A not Equal to rows of Matrix B, can't multiply "
+           "(%d x %d) x (%d x %d)\n",
+           A->rows, A->columns, B->rows, B->columns);
+
+    return C;
+  };
+  int i = 0;
+  int j = 0;
+  C.rows = A->rows;
+  C.columns = B->columns;
+  int i1 = 0;
+  int j1 = 0;
+  int o = 0;
+  const char gog[] = " x ";
+  strcpy(C.name, A->name);
+  strcat(C.name, gog);
+  strcat(C.name, B->name);
+
+  for (j1 = 0; j1 < C.columns; j1++) {
+
+    for (i1 = 0; i1 < C.rows; i1++) {
+
+      for (i = 0; i < B->rows; i++) {
+
+        C.Element[i1][j1] += A->Element[i1][i] * B->Element[i][j1];
+      };
+    };
+  };
   return C;
 };
 
@@ -594,9 +661,6 @@ double Det(const Matrix *matrix, Matrix *U, int printflag, Matrix *colvector,
         cof = U->Element[i][j] / U->Element[j][j];
         colvector->Element[i][0] -= cof * colvector->Element[j][0];
         for (k = j; k < matrix->columns; k++) {
-          // printf("cof = %.6lf / %.6lf\n", U->Element[i][j],
-          // U->Element[j][j]);
-          // cof = U->Element[i][k] / U->Element[j][k];
           U->Element[i][k] -= cof * U->Element[j][k];
         };
       };
@@ -732,6 +796,21 @@ Matrix Transpose(const Matrix *matrix) {
   return T;
 };
 
+SmallMatrix SmallTranspose(const SmallMatrix *matrix) {
+  SmallMatrix T;
+  T.rows = matrix->columns;
+  T.columns = matrix->rows;
+  const char gog[] = "_T";
+  strcpy(T.name, matrix->name);
+  strcat(T.name, gog);
+  for (int i = 0; i < matrix->columns; i++) {
+    for (int j = 0; j < matrix->rows; j++) {
+      T.Element[i][j] = matrix->Element[j][i];
+    };
+  };
+  return T;
+};
+
 double Inverse(const Matrix *matrix, Matrix *Inv) {
   if (matrix->rows != matrix->columns) {
     printf("Inverse matrix rows aren't columns\n");
@@ -816,12 +895,6 @@ double Inverse(const Matrix *matrix, Matrix *Inv) {
       Inv->Element[i][j] /= cof;
     };
   };
-
-  // fMatrixPrint(Inv, NULL, (MatrixType[]){Numerical}, stdout);
-  /* Matrix C;
-   C = Multiply(matrix, Inv);
-   fMatrixPrint(&C, NULL, (MatrixType[]){Numerical}, stdout);
-   InitializeValues(&C); */
 
   return 0.0f;
 };
@@ -1020,10 +1093,6 @@ Matrix MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols) {
   int Swapcount = 0;
 
   Det(matrix, &U, 0, cols, Swapper, &Swapcount);
-  printf("\nUpper Triangular Matrix:\n");
-  fMatrixPrint(&U, NULL, (MatrixType[]){0}, stdout);
-  printf("\nOriginal column Matrix:\n");
-  fMatrixPrint(cols, NULL, (MatrixType[]){0}, stdout);
   for (j = 1; j < U.columns; j++) {
     pivot = j;
     for (i = j - 1; i >= 0; i--) {
@@ -1037,12 +1106,6 @@ Matrix MatrixVectorSolve(Matrix *matrix, StringMatrix *vars, Matrix *cols) {
   for (int o0 = 0; o0 < vars->rows; o0++) {
     C.Element[o0][0] = cols->Element[o0][0] / U.Element[o0][o0];
   };
-
-  printf("\nU.columns = %d\tU.rows = %d\n", U.columns, U.rows);
-  printf("\nDiagonalized Matrix:\n");
-  fMatrixPrint(&U, NULL, (MatrixType[]){0}, stdout);
-  printf("\nNew Column Matrix:\n");
-  fMatrixPrint(cols, NULL, (MatrixType[]){0}, stdout);
 
   printf("vars.rows = %d\n", vars->rows);
   for (int ou = 0; ou < vars->rows; ou++) {
@@ -1099,6 +1162,16 @@ void SymmetricUpperT(Matrix *matrix) {
   };
 };
 
+void SymmetricSmallUT(SmallMatrix *matrix) {
+  int i = 0;
+  int j = 0;
+  for (j = 0; j < matrix->rows; j++) {
+    for (i = 0; i < j; i++) {
+      matrix->Element[j][i] = matrix->Element[i][j];
+    };
+  };
+};
+
 Matrix elk(double A, double Izz, double Iyy, double J, double E, double nu,
            double L) {
   Matrix Elk;
@@ -1137,6 +1210,39 @@ Matrix elk(double A, double Izz, double Iyy, double J, double E, double nu,
   return Elk;
 };
 
+SmallMatrix Smallelk(double A, double Izz, double Iyy, double J, double E,
+                     double nu, double L) {
+  SmallMatrix Elk = {"esitff", {0.0}, 12, 12};
+  Elk.Element[0][0] = A * E / L;
+  Elk.Element[0][6] = -A * E / L;
+  Elk.Element[1][1] = 12 * Izz * E / (L * L * L);
+  Elk.Element[1][5] = 6 * Izz * E / (L * L);
+  Elk.Element[1][7] = -12 * Izz * E / (L * L * L);
+  Elk.Element[1][11] = 6 * Izz * E / (L * L);
+  Elk.Element[2][2] = 12 * Iyy * E / (L * L * L);
+  Elk.Element[2][4] = -6 * Iyy * E / (L * L);
+  Elk.Element[2][8] = -12 * Iyy * E / (L * L * L);
+  Elk.Element[2][10] = -6 * Iyy * E / (L * L);
+  Elk.Element[3][3] = J * E / (2 * (1 + nu) * L);
+  Elk.Element[3][9] = -J * E / (2 * (1 + nu) * L);
+  Elk.Element[4][4] = 4 * Iyy * E / L;
+  Elk.Element[4][8] = 6 * Iyy * E / (L * L);
+  Elk.Element[4][10] = 2 * Iyy * E / L;
+  Elk.Element[5][5] = 4 * Izz * E / L;
+  Elk.Element[5][7] = -6 * Izz * E / (L * L);
+  Elk.Element[5][11] = 2 * Izz * E / L;
+  Elk.Element[6][6] = A * E / L;
+  Elk.Element[7][7] = 12 * Izz * E / (L * L * L);
+  Elk.Element[7][11] = -6 * Izz * E / (L * L);
+  Elk.Element[8][8] = 12 * Iyy * E / (L * L * L);
+  Elk.Element[8][10] = 6 * Iyy * E / (L * L);
+  Elk.Element[9][9] = J * E / (2 * (1 + nu) * L);
+  Elk.Element[10][10] = 4 * Iyy * E / L;
+  Elk.Element[11][11] = 4 * Izz * E / L;
+  SymmetricSmallUT(&Elk);
+  return Elk;
+};
+
 void norm(double xaxis[3]) {
   double n1 =
       sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
@@ -1146,20 +1252,16 @@ void norm(double xaxis[3]) {
 };
 
 Matrix GammaMat(double beta, double xaxis[3]) {
-  Matrix etran;
-  char Nom[] = "etran";
-  memcpy(etran.name, Nom, sizeof(Nom));
-  etran.rows = 12;
-  etran.columns = 12;
+  Matrix etran = {"etran", {0.0}, 12, 12};
   // When looking at node i of the member towards node j, Beta is the clockwise
   // angle downards from the original median
-  InitializeValues(&etran);
-  double ztemp[3];
-  double ytemp[3];
+  double ztemp[3] = {0.0};
+  double ytemp[3] = {0.0};
 
-  double zaxis[3];
-  double yaxis[3];
+  double zaxis[3] = {0.0};
+  double yaxis[3] = {0.0};
   norm(xaxis);
+  int isGimbalLock = (1.0 - fabs(xaxis[1])) <= 1E+06 * tol;
 
   if (1.0 - fabs(xaxis[1]) <= 1E+06 * tol) {
     printf("\nGimbal lock\n");
@@ -1231,6 +1333,60 @@ Matrix GammaMat(double beta, double xaxis[3]) {
   return etran;
 };
 
+SmallMatrix SmallGammaMat(double beta, double xaxis[3]) {
+  SmallMatrix etran = {"etran", {0.0}, 12, 12};
+  double ztemp[3] = {0.0};
+  double ytemp[3] = {0.0};
+  double zaxis[3] = {0.0};
+  double yaxis[3] = {0.0};
+  norm(xaxis);
+  int isGimbalLock = (1.0 - fabs(xaxis[1])) <= 1E+06 * tol;
+  ytemp[0] =
+      -xaxis[1] * isGimbalLock + (-xaxis[0] * xaxis[1]) * (!isGimbalLock);
+  ytemp[1] = xaxis[0] * isGimbalLock +
+             (xaxis[0] * xaxis[0] + xaxis[2] * xaxis[2]) * (!isGimbalLock);
+  ytemp[2] = 0 + (-xaxis[2] * xaxis[1]) * (!isGimbalLock);
+
+  norm(ytemp);
+
+  ztemp[0] =
+      (-xaxis[2] * xaxis[0]) * isGimbalLock + -xaxis[2] * (!isGimbalLock);
+  ztemp[1] = 0 + (-xaxis[2] * xaxis[1]) * isGimbalLock;
+  ztemp[2] = (xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1]) * isGimbalLock +
+             xaxis[0] * (!isGimbalLock);
+  norm(ztemp);
+
+  zaxis[0] = cosl(beta) * ztemp[0] - sinl(beta) * ytemp[0];
+  zaxis[1] = cosl(beta) * ztemp[1] - sinl(beta) * ytemp[1];
+  zaxis[2] = cosl(beta) * ztemp[2] - sinl(beta) * ytemp[2];
+  norm(zaxis);
+
+  yaxis[0] = cosl(beta) * ytemp[0] + sinl(beta) * ztemp[0];
+  yaxis[1] = cosl(beta) * ytemp[1] + sinl(beta) * ztemp[1];
+  yaxis[2] = cosl(beta) * ytemp[2] + sinl(beta) * ztemp[2];
+  norm(yaxis);
+
+  SmallMatrix Gamma;
+  Gamma.rows = 3;
+  Gamma.columns = 3;
+  memcpy(Gamma.Element[0], xaxis, 3 * sizeof(double));
+  memcpy(Gamma.Element[1], yaxis, 3 * sizeof(double));
+  memcpy(Gamma.Element[2], zaxis, 3 * sizeof(double));
+  int mode = 0;
+  int j = 0;
+  int k = 0;
+  for (int i = 0; i < 4; i++) {
+    mode = 3 * i;
+    for (j = 0; j < 3; j++) {
+      for (k = 0; k < 3; k++) {
+        etran.Element[mode + j][mode + k] = Gamma.Element[j][k];
+      };
+    };
+  };
+
+  return etran;
+};
+
 void AssignVariables(StringMatrix *u, int nnodes) {
   char tbf[4];
   for (int i = 0; i < nnodes; i++) {
@@ -1251,38 +1407,61 @@ void AssignVariables(StringMatrix *u, int nnodes) {
   };
 };
 
-void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
-                  Matrix *Kff, StringMatrix *u, Matrix *ends) {
+void AssignForceVars(StringMatrix *u, int nnodes) {
 
-  int ndofs = fixity->rows * fixity->columns; // should equal K->rows
+  char tbf[4];
+  for (int i = 0; i < nnodes; i++) {
+    sprintf(tbf, "%d", i);
+    strcpy(u->Variables[6 * i + 0][0].c, "Fx");
+    strcat(u->Variables[6 * i + 0][0].c, tbf);
+    strcpy(u->Variables[6 * i + 1][0].c, "Fy");
+    strcat(u->Variables[6 * i + 1][0].c, tbf);
+    strcpy(u->Variables[6 * i + 2][0].c, "Fz");
+    strcat(u->Variables[6 * i + 2][0].c, tbf);
+
+    strcpy(u->Variables[6 * i + 3][0].c, "Mx");
+    strcat(u->Variables[6 * i + 3][0].c, tbf);
+    strcpy(u->Variables[6 * i + 4][0].c, "My");
+    strcat(u->Variables[6 * i + 4][0].c, tbf);
+    strcpy(u->Variables[6 * i + 5][0].c, "Mz");
+    strcat(u->Variables[6 * i + 5][0].c, tbf);
+  };
+};
+
+void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
+                  Matrix *Kff, StringMatrix *u, Matrix *ends,
+                  SmallMatrix RotTrans[MAX_NUMBER_OF_ELEMENTS],
+                  SmallMatrix KStiff[MAX_NUMBER_OF_ELEMENTS],
+                  int memberID[12][MAX_NUMBER_OF_ELEMENTS]) {
+
+  int ndofs = fixity->rows * fixity->columns;
   int freeIndex[MAX_SIZE]; // map global dof -> free row index
-  int hasPresDisp[MAX_SIZE] = {0};
-  double presdisp[MAX_SIZE] = {0};
+  int isSupport[MAX_SIZE] = {0};
   int nFree = 0;
 
-  // Flatten loads
   Matrix load = {"Fn", {0}, ndofs, 1};
+  Matrix Usolution = {"Ufinal", {0.0}, ndofs, 1};
 
   for (int i = 0; i < fixity->rows; i++) {
     for (int j = 0; j < fixity->columns; j++) {
       int dof = 6 * i + j;
 
       double fval = fixity->Element[i][j];
+
       if (isnan(fval)) {
-        freeIndex[dof] = nFree++;
+        freeIndex[dof] = nFree;
+        nFree++;
       } else {
         freeIndex[dof] = -1;
-        presdisp[dof] = fval;
-        if (fabsl(fval) > tol) {
-          hasPresDisp[dof] = 1;
-        }
+        Usolution.Element[dof][0] = fval;
+        isSupport[i] = 1;
       }
 
       load.Element[dof][0] = concen->Element[i][j];
     }
   }
   Kff->rows = nFree;
-  Kff->columns = nFree; // IMPORTANT: square matrix
+  Kff->columns = nFree;
   StringMatrix uf;
   uf.rows = nFree;
   uf.columns = 1;
@@ -1293,7 +1472,6 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
     if (row < 0)
       continue; // skip fixed DOF rows
 
-    // start with original load
     loadF.Element[row][0] = load.Element[ig][0];
     strcpy(uf.Variables[row][0].c, u->Variables[ig][0].c);
 
@@ -1302,45 +1480,54 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
         int col = freeIndex[jg];
         Kff->Element[row][col] = K->Element[ig][jg];
       }
-
-      if (hasPresDisp[jg]) {
-        loadF.Element[row][0] -= K->Element[ig][jg] * presdisp[jg];
-      }
+      loadF.Element[row][0] -= K->Element[ig][jg] * Usolution.Element[jg][0];
     }
   }
   Matrix C;
   C = MatrixVectorSolve(Kff, &uf, &loadF);
   MatrixType m1 = Numerical;
-  // fMatrixPrint(&C, NULL, &m1, stdout);
 
-  int sos = 0;
-  Matrix R = {"R", {0.0}, ndofs, 1};
-  Matrix fluff = {"ufinal", {0.0}, ndofs, 1};
-  for (sos = 0; sos < ndofs; sos++) {
-    int row = freeIndex[sos];
-    fluff.Element[sos][0] += (hasPresDisp[sos] != 0) * presdisp[sos];
-    if (freeIndex[sos] < 0) {
-      continue;
+  for (int ig = 0; ig < ndofs; ig++) {
+    int row = freeIndex[ig];
+    if (row >= 0) {
+      Usolution.Element[ig][0] = C.Element[freeIndex[ig]][0];
     };
-    fluff.Element[sos][0] += C.Element[freeIndex[sos]][0];
   };
-  R = Multiply(K, &fluff);
-  int oik = 0;
-  Matrix Memreact = {"MemberF", {0.0}, ends->rows, 1};
-  for (oik = 0; oik < ends->rows; oik++) {
-    Memreact.Element[oik][0] +=
-        sqrt(powl(R.Element[(int)(ends->Element[oik][0] - 1) * 6 + 0][0] +
-                      R.Element[(int)(ends->Element[oik][1] - 1) * 6 + 0][0],
-                  2.0) +
-             powl(R.Element[(int)(ends->Element[oik][0] - 1) * 6 + 1][0] +
-                      R.Element[(int)(ends->Element[oik][1] - 1) * 6 + 1][0],
-                  2.0) +
-             powl(R.Element[(int)(ends->Element[oik][0] - 1) * 6 + 2][0] +
-                      R.Element[(int)(ends->Element[oik][1] - 1) * 6 + 2][0],
-                  2.0));
-  };
+  Matrix R = {"R", {0.0}, ndofs, 1};
+  StringMatrix Rname;
+  int problematicrows[2] = {-1, -7};
+  R = DebugMultiply(K, &Usolution, problematicrows);
 
-  fMatrixPrint(&Memreact, NULL, &m1, stdout);
+  AssignForceVars(&Rname, fixity->rows);
+
+  for (int ig = 0; ig < fixity->rows; ig++) {
+    if (isSupport[ig]) {
+      printf("\nnode %d is a support\n\n", ig);
+      for (int jg = 0; jg < 6; jg++) {
+        printf("%s = %.18lf\n", Rname.Variables[6 * ig + jg][0].c,
+               R.Element[6 * ig + jg][0]);
+      };
+    };
+  };
+  printf("\n\n");
+
+  SmallMatrix Tu = {"ugl", {0.0}, 12, 1};
+  int il = 0;
+  int ol = 0;
+  SmallMatrix Fu = {"Flocal", {0.0}, 12, 1};
+  double Faxial[MAX_NUMBER_OF_ELEMENTS];
+  for (int i = 0; i < ends->rows; i++) {
+    for (ol = 0; ol < 12; ol++) {
+      Tu.Element[ol][0] = Usolution.Element[memberID[ol][i]][0];
+    };
+    Tu = SmallMultiply(&RotTrans[i], &Tu);
+    Fu = SmallMultiply(&KStiff[i], &Tu);
+    Faxial[i] = Fu.Element[0][0];
+    printf("\nMember %d axial force: %.15lf\n", i, Faxial[i]);
+  };
+  int sos = 0;
+  Matrix fluff = {"ufinal", {0.0}, ndofs, 1};
+  Matrix Memreact = {"MemberF", {0.0}, ends->rows, 1};
 };
 
 void PrintFreeDOF(int is2d, Matrix *K, Matrix *fixity) {
@@ -1384,41 +1571,58 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
                                      StringMatrix *u, Matrix *concen) {
   int nnodes = coord_info->rows;
   int nele = ends->rows;
+  if (nnodes * 6 > MAX_SIZE) {
+    printf("Matrices too small. Update MAX_SIZE = %d to be at least %d\n",
+           MAX_SIZE, nnodes * 6);
+    exit(1);
+  };
+
   Matrix K = {"Ksys", {0.0}, nnodes * 6, nnodes * 6};
+
   if (properties->rows > ends->rows) {
     printf("Fatal error: %d element properties specificed, however ends->rows "
            "= %d ends known\n",
            properties->rows, ends->rows);
     exit(1);
   };
+
   if (ends->rows > properties->rows) {
     printf("Fatal error: %d members specificed, however only %d properties "
            "specified",
            ends->rows, properties->rows);
     exit(1);
   };
+
   // A	Izz	  Iyy	J	E	nu	Beta
   int i = 0;
   double xaxis[3];
   int nodeI;
   int nodeJ;
   double A, Izz, Iyy, J, E, v, Beta;
-  Matrix RotTrans = {"RotTrans", {0.0}, 12, 12};
-  Matrix RotTransT = {"RotTransT", {0.0}, 12, 12};
-  Matrix LocStiff = {"LocStiff", {0.0}, 12, 12};
-  Matrix KMember = {"KMember", {0.0}, 12, 12};
+  SmallMatrix RotTrans[MAX_NUMBER_OF_ELEMENTS];
+  SmallMatrix RotTransT[MAX_NUMBER_OF_ELEMENTS];
+  SmallMatrix LocStiff[MAX_NUMBER_OF_ELEMENTS];
+  SmallMatrix KMember[MAX_NUMBER_OF_ELEMENTS];
+  for (int hh = 0; hh < MAX_NUMBER_OF_ELEMENTS; hh++) {
+    RotTrans[hh] = (SmallMatrix){"RotTrans", {0.0}, 12, 12};
+    RotTransT[hh] = (SmallMatrix){"RotTransT", {0.0}, 12, 12};
+    LocStiff[hh] = (SmallMatrix){"LocStiff", {0.0}, 12, 12};
+    KMember[hh] = (SmallMatrix){"KMember", {0.0}, 12, 12};
+  };
+  /* SmallMatrix RotTrans = {"RotTrans", {0.0}, 12, 12};
+   SmallMatrix RotTransT = {"RotTransT", {0.0}, 12, 12};
+   SmallMatrix LocStiff = {"LocStiff", {0.0}, 12, 12};
+   SmallMatrix KMember = {"KMember", {0.0}, 12, 12}; */
+
   int il = 0;
   int ol = 0;
-  int memberID[12];
-  Matrix UU;
+  int memberID[12][MAX_NUMBER_OF_ELEMENTS] = {0};
   double L = 0;
   MatrixType m1 = Numerical;
-  PRintMatrixData(coord_info);
+  // PRintMatrixData(coord_info);
   for (i = 0; i < nele; i++) {
     nodeI = ends->Element[i][0];
     nodeJ = ends->Element[i][1];
-    InitializeValues(&LocStiff);
-    InitializeValues(&RotTrans);
     if (nodeI == nodeJ) {
       printf("Member can't connect to itself");
       exit(1);
@@ -1437,45 +1641,45 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
     v = properties->Element[i][5];
     Beta = properties->Element[i][6];
     L = sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
-    if (i == 4) {
-
-      printf("Element 4: connects from %d to %d\n", nodeI, nodeJ);
-      printf("which is x0 = %lf - %lf, \n", coord_info->Element[nodeJ - 1][0],
-             coord_info->Element[nodeI - 1][0]);
-      printf("Length of truss: %lf\n", L);
-      printf("Length calculated as sqrt(%.5lf^2 + %.5lf^2 + %.5lf^2)\n",
-             xaxis[0], xaxis[1], xaxis[2]);
+    // norm(xaxis);
+    if (i == 0 || i == 4) {
+      printf("member %d vec:\n", i);
+      printf("x_z = %.5lf - %.5lf\n", coord_info->Element[nodeJ - 1][2],
+             coord_info->Element[nodeI - 1][2]);
+      printvec(xaxis);
     };
-    norm(xaxis);
-    RotTrans = GammaMat(Beta, xaxis);
-    LocStiff = elk(A, Izz, Iyy, J, E, v, L);
-    RotTransT = Transpose(&RotTrans);
-    // printvec(xaxis);
-    KMember = Multiply(&LocStiff, &RotTrans);
-    KMember = Multiply(&RotTransT, &KMember);
+    /*   RotTrans = SmallGammaMat(Beta, xaxis);
+       LocStiff = Smallelk(A, Izz, Iyy, J, E, v, L);
+       RotTransT = SmallTranspose(&RotTrans);
+       KMember = SmallMultiply(&LocStiff, &RotTrans);
+       KMember = SmallMultiply(&RotTransT, &KMember); */
+
+    RotTrans[i] = SmallGammaMat(Beta, xaxis);
+    LocStiff[i] = Smallelk(A, Izz, Iyy, J, E, v, L);
+    RotTransT[i] = SmallTranspose(&RotTrans[i]);
+    KMember[i] = SmallMultiply(&LocStiff[i], &RotTrans[i]);
+    KMember[i] = SmallMultiply(&RotTransT[i], &KMember[i]);
 
     printf("\n");
 
     for (il = 0; il < 6; il++) {
-      memberID[il] = (nodeI - 1) * 6 + il;
+      memberID[il][i] = (nodeI - 1) * 6 + il;
     };
     for (ol = 6; ol < 12; ol++) {
-      memberID[ol] = (nodeJ - 1) * 6 + (ol - 6);
+      memberID[ol][i] = (nodeJ - 1) * 6 + (ol - 6);
     };
     for (ol = 0; ol < 12; ol++) {
       for (il = 0; il < 12; il++) {
-        K.Element[memberID[il]][memberID[ol]] += KMember.Element[il][ol];
-        if (i == 2) {
-          printf("K(%d,%d) = %lf\n", il, ol, KMember.Element[il][ol]);
-        };
+        K.Element[memberID[il][i]][memberID[ol][i]] +=
+            KMember[i].Element[il][ol];
       };
     };
   };
 
   // PRintMatrixData(&K);
-  PrintFreeDOF(1, &K, fixity);
-  Matrix Kff;
-  AssignFixity(&K, fixity, concen, &Kff, u, ends);
+  // PrintFreeDOF(1, &K, fixity);
+  Matrix Kff = {"Kff", {0.0}, 0, 0};
+  AssignFixity(&K, fixity, concen, &Kff, u, ends, RotTrans, LocStiff, memberID);
 
   return K;
 };
