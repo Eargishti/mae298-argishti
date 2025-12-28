@@ -1,6 +1,7 @@
 build1:
 	gcc testmain.c matrix.c -lm -o wenums
-	./wenums finalinfo 
+	./wenums hw5info
+	#./wenums NoB.edgar 
 flof:
 	./wenums finalinfo
 

@@ -10,8 +10,8 @@ target2=$homeFolder/OpenFOAM-dev/tutorials/incompressibleFluid/EdgarFoil/constan
 
 
 
-mkdir $target1
-mkdir $target4
+mkdir -p $target1
+mkdir -p $target4
 
 cp $parentFolder/faces ./gear/
 cp $parentFolder/points ./gear/

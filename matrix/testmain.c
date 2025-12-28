@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
   AssembleSystemStiffnessMatrix(&matrices[coord_info], &matrices[fixity],
 
                                 &matrices[properties], &matrices[ends], &u,
-                                &matrices[concen]);
-  m11 = Symbolic;
+                                &matrices[concen], &matrices[Gamma1]);
 
-  // fMatrixPrint(NULL, &u, &m11, stdout);
+  /*  Matrix CT = Transpose(&matrices[Gamma1 + 1]);
+    Matrix DD = Multiply(&CT, &matrices[Gamma1 + 1]);
+    fMatrixPrint(&DD, NULL, &(MatrixType){Numerical}, stdout);*/
 };

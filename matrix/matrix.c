@@ -57,7 +57,7 @@ void fMatrixPrint(const Matrix *matrices, StringMatrix *stringmatrix,
     fprintf(matrixfile, "\n");
     for (int i = 0; i < matrices->rows; i++) {
       for (int j = 0; j < matrices->columns; j++) {
-        fprintf(matrixfile, "%+4.15lf\t", matrices->Element[i][j]);
+        fprintf(matrixfile, "%+4.7lf\t", matrices->Element[i][j]);
       };
       fprintf(matrixfile, "\n");
     };
@@ -924,6 +924,7 @@ Matrix inverse(const Matrix *matrix) {
   double det1 = SimpleDet(matrix, &U, 0);
   if (fabs(det1) <= tol) {
     printf("Inverse not defined for 0-determinant matrix\n");
+    //    fMatrixPrint(matrix, NULL, &(MatrixType){Numerical}, stdout);
     printf("det(%s) = %.15lf\n", matrix->name, det1);
     exit(1);
   };
@@ -1003,7 +1004,7 @@ void Add(Matrix *A, Matrix *B) {
 
 Matrix Subtract(const Matrix *A, const Matrix *B) {
 
-  Matrix C;
+  Matrix C = {"", {0.0}, A->rows, A->columns};
   C.rows = A->rows;
   C.columns = A->columns;
   if (A->rows != B->rows || A->columns != B->columns) {
@@ -1239,6 +1240,45 @@ SmallMatrix Smallelk(double A, double Izz, double Iyy, double J, double E,
   Elk.Element[9][9] = J * E / (2 * (1 + nu) * L);
   Elk.Element[10][10] = 4 * Iyy * E / L;
   Elk.Element[11][11] = 4 * Izz * E / L;
+  SymmetricSmallUT(&Elk);
+  return Elk;
+};
+
+SmallMatrix ShearAdjusteElk(double A, double Izz, double Iyy, double J,
+                            double E, double nu, double L, double As2,
+                            double As3) {
+  SmallMatrix Elk = {"esitff", {0.0}, 12, 12};
+  double G = E / (2 * (1 + nu));
+  double eta_y = E * Izz / (G * As2);
+  double kgamma_y = E * Izz / (L * ((L * L) / 12.0 + eta_y));
+  double eta_z = E * Iyy / (G * As3);
+  double kgamma_z = E * Iyy / (L * ((L * L) / 12.0 + eta_z));
+  Elk.Element[0][0] = A * E / L;
+  Elk.Element[0][6] = -A * E / L;
+  Elk.Element[1][1] = kgamma_y;
+  Elk.Element[1][5] = kgamma_y * (L / 2.0);
+  Elk.Element[1][7] = -kgamma_y;
+  Elk.Element[1][11] = kgamma_y * (L / 2.0);
+  Elk.Element[2][2] = kgamma_z;
+  Elk.Element[2][4] = -kgamma_z * (L / 2.0);
+  Elk.Element[2][8] = -kgamma_z;
+  Elk.Element[2][10] = -kgamma_z * (L / 2.0);
+  Elk.Element[3][3] = J * E / (2 * (1 + nu) * L);
+  Elk.Element[3][9] = -J * E / (2 * (1 + nu) * L);
+  Elk.Element[4][4] = kgamma_z * (L * L / 3.0 + eta_z);
+  Elk.Element[4][8] = kgamma_z * (L / 2.0);
+  Elk.Element[4][10] = kgamma_z * (L * L / 6.0 - eta_z);
+  Elk.Element[5][5] = kgamma_y * (L * L / 3.0 + eta_y);
+  Elk.Element[5][7] = -kgamma_y * (L / 2.0);
+  Elk.Element[5][11] = kgamma_y * (L * L / 6.0 - eta_y);
+  Elk.Element[6][6] = A * E / L;
+  Elk.Element[7][7] = kgamma_y;
+  Elk.Element[7][11] = -kgamma_y * (L / 2.0);
+  Elk.Element[8][8] = kgamma_z;
+  Elk.Element[8][10] = kgamma_z * (L / 2.0);
+  Elk.Element[9][9] = J * E / (2 * (1 + nu) * L);
+  Elk.Element[10][10] = kgamma_z * (L * L / 3.0 + eta_z);
+  Elk.Element[11][11] = kgamma_y * (L * L / 3.0 + eta_y);
   SymmetricSmallUT(&Elk);
   return Elk;
 };
@@ -1525,6 +1565,99 @@ void AssignFixity(const Matrix *K, const Matrix *fixity, const Matrix *concen,
   Matrix Memreact = {"MemberF", {0.0}, ends->rows, 1};
 };
 
+Matrix CondenseDOF(const Matrix *K, int *DDOF, int rows, int columns) {
+  Matrix Kff = {"Kred", {0.0}, 24, 24};
+  /*int ElimDOF[36] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                     12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+                     26, 27, 28, 32, 33, 34, 38, 39, 40, 44, 45, 46}; */
+  int i = 0;
+  int j = 0;
+  int i1 = 0;
+  int j1 = 0;
+  int rowdone = 0;
+
+  for (i = 0; i < 24; i++) {
+    for (j = 0; j < 24; j++) {
+      Kff.Element[i][j] = K->Element[24 + i][24 + j];
+    };
+  };
+  Matrix Kffr = {"Kffr", {0.0}, 20, 20};
+
+  /* for (i = 0; i < 24; i++) {
+    for (j = 0; j < 24; j++) {
+      if ((i % 6 != 2) && (j % 6 != 2)) {
+        Kffr.Element[i1][j1] = Kff.Element[i][j];
+        j1++;
+        rowdone = 1;
+      };
+    };
+    j1 = 0;
+    i1 += (rowdone == 1);
+    rowdone = 0;
+  }; */
+
+  for (int i = 0; i < 24; ++i) {
+    if (i % 6 == 2)
+      continue;
+    int j1 = 0;
+    for (int j = 0; j < 24; ++j) {
+      if (j % 6 == 2)
+        continue;
+      Kffr.Element[i1][j1] = Kff.Element[i][j];
+      ++j1;
+    }
+    ++i1;
+  }
+
+  // 24x24
+  // 20x20
+  // Keeping 12
+  // Eliminate 8
+
+  int DDof[12] = {0, 1, 4, 5, 6, 9, 10, 11, 14, 15, 16, 19};
+  int ElimDOF[8] = {2, 3, 7, 8, 12, 13, 17, 18};
+
+  Matrix Kee = {"", {0.0}, Kffr.rows - 12, Kffr.columns - 12};
+
+  Matrix Kec = {"", {0.0}, Kffr.rows - 12, 12};
+
+  Matrix Kce = {"", {0.0}, 12, Kffr.columns - 12};
+
+  Matrix Kcc = {"", {0.0}, 12, 12};
+
+  for (i = 0; i < Kee.rows; i++) {
+    for (j = 0; j < Kee.columns; j++) {
+      Kee.Element[i][j] = Kffr.Element[ElimDOF[i]][ElimDOF[j]];
+    };
+  };
+
+  for (i = 0; i < Kec.rows; i++) {
+    for (j = 0; j < Kec.columns; j++) {
+      Kec.Element[i][j] = Kffr.Element[ElimDOF[i]][DDof[j]];
+    };
+  };
+
+  for (i = 0; i < Kce.rows; i++) {
+    for (j = 0; j < Kce.columns; j++) {
+      Kce.Element[i][j] = Kffr.Element[DDof[i]][ElimDOF[j]];
+    };
+  };
+
+  for (i = 0; i < Kcc.rows; i++) {
+    for (j = 0; j < Kcc.columns; j++) {
+      Kcc.Element[i][j] = Kffr.Element[DDof[i]][DDof[j]];
+    };
+  };
+
+  Matrix KeeInv = {"", {0.0}, Kee.rows, Kee.columns};
+  KeeInv = inverse(&Kee);
+  KeeInv = Multiply(&KeeInv, &Kec);
+  KeeInv = Multiply(&Kce, &KeeInv);
+  Kcc = Subtract(&Kcc, &KeeInv);
+
+  return Kcc;
+};
+
 void PrintFreeDOF(int is2d, Matrix *K, Matrix *fixity) {
   int wasprinted = 0;
   int elementsprinted = 0;
@@ -1563,7 +1696,8 @@ void printvec(double xaxis[3]) {
 
 Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
                                      Matrix *properties, Matrix *ends,
-                                     StringMatrix *u, Matrix *concen) {
+                                     StringMatrix *u, Matrix *concen,
+                                     Matrix *Gamma1) {
   int nnodes = coord_info->rows;
   int nele = ends->rows;
   if (nnodes * 6 > MAX_SIZE) {
@@ -1615,6 +1749,8 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
   int ol = 0;
   int memberID[12][MAX_NUMBER_OF_ELEMENTS] = {0};
   double L = 0;
+  double As2 = 6.8676;
+  double As3 = 18.934;
   MatrixType m1 = Numerical;
   // PRintMatrixData(coord_info);
   for (i = 0; i < nele; i++) {
@@ -1636,9 +1772,10 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
     J = properties->Element[i][3];
     E = properties->Element[i][4];
     v = properties->Element[i][5];
-    Beta = properties->Element[i][6];
+    Beta = 3.141592653589 * properties->Element[i][6] / 180.0;
     L = sqrt(xaxis[0] * xaxis[0] + xaxis[1] * xaxis[1] + xaxis[2] * xaxis[2]);
     RotTrans[i] = SmallGammaMat(Beta, xaxis);
+    // LocStiff[i] = ShearAdjusteElk(A, Izz, Iyy, J, E, v, L, As2, As3);
     LocStiff[i] = Smallelk(A, Izz, Iyy, J, E, v, L);
     RotTransT[i] = SmallTranspose(&RotTrans[i]);
     KMember[i] = SmallMultiply(&LocStiff[i], &RotTrans[i]);
@@ -1657,7 +1794,15 @@ Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity,
     };
   };
   Matrix Kff = {"Kff", {0.0}, 0, 0};
+  /* Matrix Ks = CondenseDOF(&K, NULL, 12, 12);
+   fMatrixPrint(&Ks, NULL, &(MatrixType){Numerical}, stdout);
+   Matrix Kgg = Multiply(&Ks, Gamma1);
+   Matrix GT = Transpose(Gamma1);
+   Kgg = Multiply(&GT, &Kgg);
+   fMatrixPrint(&Kgg, NULL, &(MatrixType){Numerical}, stdout); */
+
   AssignFixity(&K, fixity, concen, &Kff, u, ends, RotTrans, LocStiff, memberID);
+  printf("nele = %d\n", nele);
 
   return K;
 };

@@ -133,9 +133,12 @@ void MatrixDefineForm(FILE *header, Matrix *matrices, StringMatrix *stringmats, 
 
 void AssignVariables(StringMatrix *u, int nnodes);
 
-Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity, Matrix *properties, Matrix *ends, StringMatrix *u, Matrix *concen);
+Matrix AssembleSystemStiffnessMatrix(Matrix *coord_info, Matrix *fixity, Matrix *properties, Matrix *ends, StringMatrix *u, Matrix *concen, Matrix *Gamma1);
 
 void AssignForceVars(StringMatrix *u, int nnodes);
 
 Matrix DebugMultiply(const Matrix *A, const Matrix *B, int problematicrow[2]);
 
+SmallMatrix ShearAdjusteElk(double A, double Izz, double Iyy, double J, double E, double nu, double L, double As1, double As2);
+
+Matrix CondenseDOF(const Matrix *K, int *DDOF, int rows, int columns); 

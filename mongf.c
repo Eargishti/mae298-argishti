@@ -16,6 +16,13 @@ long double t4 = 1.0089304113; */
 
 const long double delz = 0.05L;
 const long double tol = 1e-15L;
+
+typedef struct {
+  double Ux;
+  double Uy;
+
+} BoundaryConditions;
+
 typedef struct {
   long double m;
   long double T;
@@ -37,6 +44,7 @@ typedef struct {
   int gp;
   long double Cpar;
   int Tpar;
+  int IsSym;
 
 } MeshFineness;
 
@@ -335,6 +343,32 @@ void headsF(FILE *f1, const char *sting, const char *stong) {
   fprintf(f1, "    format      ascii;\n");
   fprintf(f1, "    class       %s;\n", sting);
   fprintf(f1, "    object      %s;\n", stong);
+  fprintf(f1, "}\n");
+  fprintf(f1, " // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * "
+              "* * * * * * * //");
+};
+void HeadsF(FILE *f1, const char *cLaSS, const char *oBjEcT,
+            const char *LoCation) {
+  fprintf(f1, "");
+  fprintf(f1, " /*--------------------------------*- C++ "
+              "-*----------------------------------*\\\n");
+  fprintf(f1, "  =========                 |\n");
+
+  fprintf(f1, "  \\\\      /  F ield         | OpenFOAM: The Open Source CFD "
+              "Toolbox\n");
+
+  fprintf(f1,
+          "   \\\\    /   O peration     | Website:  https://openfoam.org\n");
+  fprintf(f1, "    \\\\  /    A nd           | Version:  dev\n");
+  fprintf(f1, "     \\\\/     M anipulation  |\n");
+  fprintf(f1, "\\*-------------------------------------------------------------"
+              "--------------*/\n");
+  fprintf(f1, "FoamFile\n");
+  fprintf(f1, "{\n");
+  fprintf(f1, "    format      ascii;\n");
+  fprintf(f1, "    class       %s;\n", cLaSS);
+  fprintf(f1, "    location    %s;\n", LoCation);
+  fprintf(f1, "    object      %s;\n", oBjEcT);
   fprintf(f1, "}\n");
   fprintf(f1, " // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * "
               "* * * * * * * //");
@@ -706,7 +740,7 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
   for (int i = 0; i < foil->count; i++) {
     if (i == 0) {
       printf("\nBefore integer division %.15Lf\n", (xL - foil->x[i]) / cpar);
-      nodes = (xL - foil->x[i]) / cpar;
+      nodes = (3 * (xL - foil->x[i])) / (2 * cpar);
       printf("\nAfter integer division %d\n", (nodes));
       printf("\nAfter integer division %d\n", (nodes));
     };
@@ -2088,9 +2122,14 @@ void linestack(FILE *pointoutput[4], foilpoint *foil, foilpoint *zoinks,
   free(oker);
 };
 
+long double dist(long double x0, long double x1, long double y0,
+                 long double y1) {
+  return sqrtl((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+};
+
 void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
                  Tarray *array, double tmax, int backtrace, trace *trace1,
-                 long double xR) {
+                 long double xR, long double *Area) {
   pointoutput[0] = fopen("figaro1.txt", "w");
   pointoutput[1] = fopen("figarosafe.txt", "w");
   pointoutput[2] = fopen("points", "a");
@@ -2121,12 +2160,18 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
   int n = 0;
   int cable = 0;
   long double z0 = 0.0L;
+  *Area = 0.0L;
 
   while (*(array->T + n) < a.p * a.c) {
     long double tmpt;
     tmpt = *(array->T + n);
     foil->x[n] = tmpt - f3(tmpt, a) * sin(theta1(tmpt, a));
     foil->y[n] = f1(tmpt, a) + f3(tmpt, a) * cos(theta1(tmpt, a));
+    if (n > 0) {
+      *Area +=
+          dist(foil->x[n], foil->x[n - 1], foil->y[n], foil->y[n - 1]) * delz;
+    };
+
     foil->label[n] = n;
     foil->section[n] = 1;
     foil->associatedT[n] = tmpt;
@@ -2162,6 +2207,8 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
     tmpt = *(array->T + n);
     foil->x[n] = tmpt - f3(tmpt, a) * sin(theta2(tmpt, a));
     foil->y[n] = f2(tmpt, a) + f3(tmpt, a) * cos(theta2(tmpt, a));
+    *Area +=
+        dist(foil->x[n], foil->x[n - 1], foil->y[n], foil->y[n - 1]) * delz;
     foil->section[n] = 3;
     foil->label[n] = n;
     foil->associatedT[n] = tmpt;
@@ -2227,6 +2274,10 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
 
     foil->x[k] = tmpt + f3(tmpt, a) * sin(theta2(tmpt, a));
     foil->y[k] = f2(tmpt, a) - f3(tmpt, a) * cos(theta2(tmpt, a));
+
+    *Area +=
+        dist(foil->x[k], foil->x[k - 1], foil->y[k], foil->y[k - 1]) * delz;
+
     foil->section[k] = 4;
     foil->label[k] = k + backtrace;
 
@@ -2260,6 +2311,8 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
     tmpt = *(array->T + n);
     foil->x[k] = tmpt + f3(tmpt, a) * sin(theta1(tmpt, a));
     foil->y[k] = f1(tmpt, a) - f3(tmpt, a) * cos(theta1(tmpt, a));
+    *Area +=
+        dist(foil->x[k], foil->x[k - 1], foil->y[k], foil->y[k - 1]) * delz;
     foil->section[k] = 2;
     foil->label[k] = k + backtrace;
 
@@ -2268,8 +2321,6 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
     foil->slope[k] = (-1.0 / dydx2(tmpt, a));
 
     fprintf(pointoutput[0], "%.15Lf\t%.15Lf\n", foil->x[k], foil->y[k]);
-    //   printf("t(%d) = %.15Lf\t%.15Lf\t%.15Lf\n", foil->label[k],
-    //   foil->associatedT[k], foil->x[k], foil->y[k]);
 
     fprintf(pointoutput[1], "%.15Lf\t%.15Lf\t%.4Lf\t%d\n", foil->x[k],
             foil->y[k], 0.0L, 2 * foil->label[k]);
@@ -2288,6 +2339,9 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
     n--;
     k++;
   };
+
+  *Area += dist(foil->x[k - 1], foil->x[0], foil->y[k - 1], foil->y[0]) * delz;
+
   printf("Array size was %d\n", array->size);
   printf("Allocated point size was %d", foil->count);
   fclose(pointoutput[0]);
@@ -2296,20 +2350,66 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
   fclose(pointoutput[3]);
 };
 
+void controlDictPrint() {
+  FILE *contdic;
+  contdic = fopen("controlDicc", "w");
+  HeadsF(contdic, "dictionary", "controlDict", "\"system\"");
+  fprintf(contdic, "\n"
+                   "application     simpleFoam;\n"
+                   "\n"
+                   "solver          incompressibleFluid;\n"
+                   "\n"
+                   "startFrom       startTime;\n"
+                   "\n"
+                   "startTime       0;\n"
+                   "\n"
+                   "stopAt          endTime;\n"
+                   "\n"
+                   "endTime         1500;\n"
+                   "\n"
+                   "deltaT          20;\n"
+                   "\n"
+                   "writeControl    timeStep;\n"
+                   "\n"
+                   "writeInterval   15;\n"
+                   "\n"
+                   "purgeWrite      0;\n"
+                   "\n"
+                   "writeFormat     ascii;\n"
+                   "\n"
+                   "writePrecision  5;\n"
+                   "\n"
+                   "writeCompression off;\n"
+                   "\n"
+                   "timeFormat      general;\n"
+                   "\n"
+                   "timePrecision   5;\n"
+                   "\n"
+                   "runTimeModifiable true;"
+                   "\n");
+};
+
 void Tvalues(int mp, long double r, long double t[4], Tarray *array,
-             int *defaulter, int gp) {
+             int *defaulter, int gp, int IsSymmetric) {
   long double A, B, C;
   long double A1, B1;
 
   C = t[0];
   printf("C = %.15Lf\n", C);
-  if (t[2] > t[0]) {
-    B = log((t[2] - t[0]) / (t[1] - t[0])) * (1 / log(r));
-    defaulter[0] = 0;
+  if (IsSymmetric == 0) {
+    if (t[2] > t[0]) {
+      B = log((t[2] - t[0]) / (t[1] - t[0])) * (1 / log(r));
+      defaulter[0] = 0;
+    } else {
+      B = log((t[0] - t[2]) / (t[1] - t[0])) * (1 / log(r));
+      defaulter[0] = 1;
+    };
   } else {
-    B = log((t[0] - t[2]) / (t[1] - t[0])) * (1 / log(r));
-    defaulter[0] = 1;
-  };
+    B = IsSymmetric;
+  }
+
+  printf("t0 = %.15Lf, t2 = %.15Lf\n", t[0], t[2]);
+  printf("t1 = %.15Lf\n", t[1]);
   printf("B = %.15Lf\n", B);
   A = (t[1] - t[0]) / powl(((long double)(mp)), B);
 
@@ -2333,14 +2433,12 @@ void Tvalues(int mp, long double r, long double t[4], Tarray *array,
   while (n <= mp) {
     temp = A * pow((long double)n, B) + C;
     array->T[n] = temp;
-    //   printf("t(%d) = %.15Lf\n", n, array->T[n]);
     n++;
   };
   while (n < array->size && n > mp) {
     int m11 = n - mp;
     temp = A1 * pow((long double)m11, B1) + t[1];
     array->T[n] = temp;
-    //    printf("t(%d) = %.15Lf\n", n, array->T[n]);
     n++;
   };
 
@@ -2348,9 +2446,6 @@ void Tvalues(int mp, long double r, long double t[4], Tarray *array,
   printf("\nThe size %d\n", array->size);
   printf("\n ntip at %d is %.15Lf", array->size - 1, array->T[array->size - 1]);
   array->T[array->size - 1] = t[3];
-
-  //  printf("tf(%d) = %.15Lf\n", array->size - 1, array->T[array->size - 1]);
-  //  printf("size still is\t\n%d", array->size);
 };
 
 long double arcelength(long double t1, long double t2, int whichfunction) {
@@ -2382,7 +2477,8 @@ long double arcelength(long double t1, long double t2, int whichfunction) {
   return 1.0L;
 };
 
-void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter) {
+void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter,
+               int IsSym) {
   long double t0 = array->T[0];
   long double y0 =
       f1(array->T[0], a) + f3(array->T[0], a) * cosl(theta1(array->T[0], a));
@@ -2400,7 +2496,8 @@ void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter) {
   printf("(x1, y1) = (%.7Lf, %.7Lf)\n", x1, y1);
   printf("(d1, d2) = (%.7Lf, %.7Lf)\n", d1, d2);
 
-  int fefOG = ((int)(d2 / d1)) + 1;
+  int fefOG = (((int)(d2 / d1)) + 1) * (IsSym == 0) + 0 * (IsSym != 0);
+  fefOG = 1;
   printf("fefOG = %d\n", fefOG);
 
   if (fefOG > 1 && (*defaulter == 0)) {
@@ -2446,7 +2543,7 @@ void PrintData(MeshFineness *Mesh1, aerofoil *aero) {
   printf("tpar =  %d \n", Mesh1->Tpar);
 };
 
-int readMesh2(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero) {
+int readMesh0(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero) {
 
   int j = 0;
   j = fscanf(inputfile, "%Lf\n", &Mesh1->xL);
@@ -2463,6 +2560,31 @@ int readMesh2(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero) {
   j += fscanf(inputfile, "%d\n", &Mesh1->gp);
   j += fscanf(inputfile, "%Lf\n", &Mesh1->Cpar);
   j += fscanf(inputfile, "%d\n", &Mesh1->Tpar);
+  j += fscanf(inputfile, "%d\b", &Mesh1->IsSym);
+  PrintData(Mesh1, aero);
+  return j;
+}
+
+int readMesh2(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero,
+              BoundaryConditions *BB3) {
+
+  int j = 0;
+  j = fscanf(inputfile, "%Lf\n", &Mesh1->xL);
+  j += fscanf(inputfile, "%Lf\n", &Mesh1->xR);
+  j += fscanf(inputfile, "%Lf\n", &Mesh1->yB);
+  j += fscanf(inputfile, "%Lf\n", &Mesh1->yU);
+  j += fscanf(inputfile, "%Lf\n", &aero->m);
+  j += fscanf(inputfile, "%Lf\n", &aero->p);
+  j += fscanf(inputfile, "%Lf\n", &aero->T);
+  j += fscanf(inputfile, "%Lf\n", &aero->c);
+  j += fscanf(inputfile, "%d\n", &Mesh1->mp);
+  j += fscanf(inputfile, "%d\n", &Mesh1->r_num);
+  j += fscanf(inputfile, "%d\n", &Mesh1->r_dem);
+  j += fscanf(inputfile, "%d\n", &Mesh1->gp);
+  j += fscanf(inputfile, "%Lf\n", &Mesh1->Cpar);
+  j += fscanf(inputfile, "%d\n", &Mesh1->Tpar);
+  j += fscanf(inputfile, "%lf\n", &BB3->Ux);
+  j += fscanf(inputfile, "%lf\n", &BB3->Uy);
   PrintData(Mesh1, aero);
   return j;
 }
@@ -2604,15 +2726,26 @@ int main(int argc, char *argv[]) {
   xR = Mesh1.xR;
   yU = Mesh1.yU;
   yB = Mesh1.yB;
-
+  BoundaryConditions BB3 = {0.0, 0.0};
   int op59 = 0;
 
   if (FileProvided == 1 && FileType == 0) {
-    op59 = readMesh2(inputfile, &Mesh1, &aero);
+    op59 = readMesh0(inputfile, &Mesh1, &aero);
+    op59 -= 1;
   };
   if (FileProvided == 1 && FileType == 1) {
     op59 = ReadMesh1(inputfile, &Mesh1, &aero);
   };
+  if (FileProvided == 2 && FileType == 1) {
+    op59 = readMesh2(inputfile, &Mesh1, &aero, &BB3);
+    printf("op59 was %d\n", op59);
+    op59 -= 2;
+  };
+  xL = Mesh1.xL;
+  xR = Mesh1.xR;
+  yU = Mesh1.yU;
+  yB = Mesh1.yB;
+
   printf("op59 = %d\n", op59);
 
   if (FileProvided == 1 && op59 != 14) {
@@ -2722,6 +2855,7 @@ t1fix:
       long double tempval[10];
       testval = prevtval + ((long double)i) / pow(10.0, (long double)(j + 2));
       tempval[i] = Firstroot(testval, aero, xL, yU);
+      printf("xL = %.15Lf\n", xL);
       if (i == 0) {
         minval = tempval[i];
         correctdigit = ((long double)i) / pow(10.0, (long double)(j + 2));
@@ -2983,7 +3117,7 @@ t2fix:
   gp = Mesh1.gp;
   r = (long double)(((long double)(r_num)) / ((long double)(r_dem)));
 
-  Tvalues(mp, r, p, array, &defaulter, gp);
+  Tvalues(mp, r, p, array, &defaulter, gp, Mesh1.IsSym);
 
   long double vi = 24;
   /*
@@ -3044,13 +3178,18 @@ t2fix:
   int ncrit = 0;
   int backtrace;
   long double cpar;
+  long double Area = 0;
+  FILE *areaf;
+  areaf = fopen("SurfaceArea", "w");
 
   backtrace = Mesh1.Tpar * mp;
   // backtrace = Tpar * mp
   cpar = Mesh1.Cpar / (long double)Mesh1.mp;
 
-  arcadjust(array, aero, &ncrit, &defaulter);
-  foilcompute(points, foil1, aero, array, t3, backtrace, trace1, Mesh1.xR);
+  arcadjust(array, aero, &ncrit, &defaulter, Mesh1.IsSym);
+  foilcompute(points, foil1, aero, array, t3, backtrace, trace1, Mesh1.xR,
+              &Area);
+  fprintf(areaf, "%.15Lf", Area);
 
   printf("\nMesh Data:\n");
   printf("xL: %.5Lf\t%.5Lf\n", xL, Mesh1.xL);
