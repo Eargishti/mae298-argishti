@@ -60,15 +60,14 @@ integral trapezoidal(long double x0, long double x1, int n) {
   return I1;
 };
 
-long double GaussianQuadrature(long double x0, long double x1, Gauss G[100]) {
-  // u = 2x/x1-x0 - 2x0 / x1 - x0 - 100
-
+// u = 2x/x1-x0 - 2x0 / x1 - x0 - 100
+long double GaussianQuadrature(long double x0, long double x1, Gauss G[100],
+                               int NodeCount) {
   long double result = 0.0L;
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < NodeCount; i++) {
     result += ((x1 - x0) / 2.0L) * G[i].weight *
               f((G[i].node + 1) * (x1 - x0) / 2 + x0);
   };
-
   return result;
 };
 
@@ -90,7 +89,7 @@ int main() {
   SetWeights(G1, f1);
   long double I0;
 
-  I0 = GaussianQuadrature(x0, x1, G1);
+  I0 = GaussianQuadrature(x0, x1, G1, 100);
   printf("x0 = %.5Lf, x1 = %.5Lf, n = %d\n", x0, x1, n);
   printf("I = %.25Lf\n", I0);
 };

@@ -48,6 +48,12 @@ typedef struct {
 
 } MeshFineness;
 
+typedef struct {
+  long double weight;
+  long double node;
+  int i;
+} Gauss;
+
 long double f1(long double t, aerofoil a) {
   return (a.kk * (2 * a.p * (t / a.c) - ((t / a.c) * (t / a.c))));
 }
@@ -2128,8 +2134,8 @@ long double dist(long double x0, long double x1, long double y0,
 };
 
 void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
-                 Tarray *array, double tmax, int backtrace, trace *trace1,
-                 long double xR, long double *Area) {
+                 Tarray *array, int backtrace, trace *trace1, long double xR,
+                 long double *Area) {
   pointoutput[0] = fopen("figaro1.txt", "w");
   pointoutput[1] = fopen("figarosafe.txt", "w");
   pointoutput[2] = fopen("points", "a");
@@ -2350,6 +2356,22 @@ void foilcompute(FILE *pointoutput[3], foilpoint *foil, aerofoil a,
   fclose(pointoutput[3]);
 };
 
+void SetWeights(Gauss G[100], FILE *gaustxt) {
+  char *endptr;
+  char Buffer[BUFFER_SIZE];
+  for (int i = 0; i < 50; i++) {
+    fgets(Buffer, BUFFER_SIZE, gaustxt);
+    G[2 * i].node = strtold(Buffer, &endptr);
+    G[2 * i + 1].node = -G[2 * i].node;
+    G[2 * i].weight = strtold(endptr, &endptr);
+    G[2 * i + 1].weight = G[2 * i].weight;
+    G[2 * i].i = 2 * i;
+    G[2 * i + 1].i = 2 * i + 1;
+    fprintf(stdout, "%.9Lf\t%.9Lf\n", G[2 * i].weight, G[2 * i].node);
+    fprintf(stdout, "%.9Lf\t%.9Lf\n", G[2 * i + 1].weight, G[2 * i + 1].node);
+  };
+}
+
 void controlDictPrint() {
   FILE *contdic;
   contdic = fopen("controlDicc", "w");
@@ -2448,37 +2470,53 @@ void Tvalues(int mp, long double r, long double t[4], Tarray *array,
   array->T[array->size - 1] = t[3];
 };
 
-long double arcelength(long double t1, long double t2, int whichfunction) {
-  // x1 = t - f3(t) * sin (theta1(t) );
-  // y1 = f1(t) + f3(t) cos (theta1(t));
-  // x1' = 1 - f3prime(t) sin (theta1(t)) - f3(t) theta1prime(t) cos(theta1(t))
-  // y1' = f1prime(t) + f3prime(t) cos (theta1(t)) - f3(t) theta1prime(t) sin
-  // (theta1(t))
-
-  // Integrand = sqrt(x1'^2 + y1'^2)
-  //
-  // w_i = 2 / ( (1 - x_i)^2 [P'n(x_i)]^2 )
-  // P_n(x) = (1/(n! 2^n)) d^n/dx^n (x^2 - 1)^n
-  FILE *generatedc;
-  generatedc = fopen("generated.c", "w");
-  int n = 2;
-
-  fprintf(generatedc, "#include <stdio.h>\n");
-  fprintf(generatedc, "#include <math.h>\n");
-
-  switch (whichfunction) {
-  case 1:
-
-    break;
-  default:
-    break;
-  };
-
-  return 1.0L;
+long double Integrand(long double t, long double t3, aerofoil a) {
+  long double T = t;
+  T *= (t < 0.0L) * (-1.0L) + (t >= 0.0L) * (1.0L);
+  // return f3prime(T, a);
+  return (t >= 0.0L && t < a.p * a.c) *
+             sqrtl(powl(1 - f3prime(T, a) * sinl(theta1(T, a)) -
+                            f3(T, a) * cosl(theta1(T, a)) * theta1prime(T, a),
+                        2.0L) +
+                   powl(f1prime(T, a) + f3prime(T, a) * cosl(theta1(T, a)) -
+                            f3(T, a) * sinl(theta1(T, a)) * theta1prime(T, a),
+                        2.0L)) +
+         (t < 0.0 && t > -a.p * a.c) *
+             sqrtl(powl(1 + f3prime(T, a) * sinl(theta1(T, a)) +
+                            f3(T, a) * cosl(theta1(T, a)) * theta1prime(T, a),
+                        2.0L) +
+                   powl(f1prime(T, a) - f3prime(T, a) * cosl(theta1(T, a)) +
+                            f3(T, a) * sinl(theta1(T, a)) * theta1prime(T, a),
+                        2.0L)) +
+         (t >= a.p * a.c && t <= t3) *
+             sqrtl(powl(1 - f3prime(T, a) * sinl(theta2(T, a)) -
+                            f3(T, a) * cosl(theta2(T, a)) * theta2prime(T, a),
+                        2.0L) +
+                   powl(f2prime(T, a) + f3prime(T, a) * cosl(theta2(T, a)) -
+                            f3(T, a) * sinl(theta2(T, a)) * theta2prime(T, a),
+                        2.0L)) +
+         (t <= -a.p * a.c && t <= -t3) *
+             sqrtl(powl(1 + f3prime(T, a) * sinl(theta2(T, a)) +
+                            f3(T, a) * cosl(theta2(T, a)) * theta2prime(T, a),
+                        2.0L) +
+                   powl(f2prime(T, a) - f3prime(T, a) * cosl(theta2(T, a)) +
+                            f3(T, a) * sinl(theta2(T, a)) * theta2prime(T, a),
+                        2.0L));
 };
 
-void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter,
-               int IsSym) {
+long double arclength(long double t1, long double t2, long double t3,
+                      aerofoil a, Gauss G[100]) {
+
+  long double result = 0.0L;
+  for (int i = 0; i < 100; i++) {
+    result += ((t2 - t1) / 2.0L) * G[i].weight *
+              Integrand((G[i].node + 1) * (t2 - t1) / 2 + t1, t3, a);
+  };
+  return result;
+};
+
+void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter, int IsSym,
+               long double t3, Gauss G[100]) {
   long double t0 = array->T[0];
   long double y0 =
       f1(array->T[0], a) + f3(array->T[0], a) * cosl(theta1(array->T[0], a));
@@ -2494,10 +2532,13 @@ void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter,
   printf("/////// arcadjust data ///////\n");
   printf("(x0, y0) = (%.7Lf, %.7Lf)\n", x0, y0);
   printf("(x1, y1) = (%.7Lf, %.7Lf)\n", x1, y1);
-  printf("(d1, d2) = (%.7Lf, %.7Lf)\n", d1, d2);
+  printf("(d1, d2) = (%.15Lf, %.15Lf)\n", d1, d2);
+  d1 = arclength(t0, array->T[1], t3, a, G);
+  d2 = arclength(1e-25L, t0, t3, a, G);
 
-  int fefOG = (((int)(d2 / d1)) + 1) * (IsSym == 0) + 0 * (IsSym != 0);
-  fefOG = 1;
+  int fefOG = (((int)(d2 / d1)) + 1) * (IsSym == 0) + 1 * (IsSym != 0);
+  // fefOG -= 1;
+
   printf("fefOG = %d\n", fefOG);
 
   if (fefOG > 1 && (*defaulter == 0)) {
@@ -2520,11 +2561,7 @@ void arcadjust(Tarray *array, aerofoil a, int *ncrit, int *defaulter,
   };
 
   *ncrit = fefOG;
-  printf("\nPay attention: fefOG = %d \t whilst ncrit =%d ", fefOG, *ncrit);
-  printf("\nOld Tarray size: %d\n", array->size - fefOG);
-  printf("\nNew size = %d", array->size);
 }
-#define PREC 256
 
 void PrintData(MeshFineness *Mesh1, aerofoil *aero) {
   printf("xL = %.15Lf \n", Mesh1->xL);
@@ -2544,7 +2581,6 @@ void PrintData(MeshFineness *Mesh1, aerofoil *aero) {
 };
 
 int readMesh0(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero) {
-
   int j = 0;
   j = fscanf(inputfile, "%Lf\n", &Mesh1->xL);
   j += fscanf(inputfile, "%Lf\n", &Mesh1->xR);
@@ -2567,7 +2603,6 @@ int readMesh0(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero) {
 
 int readMesh2(FILE *inputfile, MeshFineness *Mesh1, aerofoil *aero,
               BoundaryConditions *BB3) {
-
   int j = 0;
   j = fscanf(inputfile, "%Lf\n", &Mesh1->xL);
   j += fscanf(inputfile, "%Lf\n", &Mesh1->xR);
@@ -2637,17 +2672,20 @@ void descriptionprint() {
          "the mesh\n");
   printf("m is the camber, P is the position of the maximum camber, T is the "
          "thickness, c is the chord length\n");
-  printf(
-      "mp is the number of points between the horizontal median point and the "
-      "point which connects the top left point of the mesh\n mp x r_num/r_dem "
-      "is the number of points between the horizontal median point and the "
-      "point which connects the bottom left point of the mesh\n, gp is the "
-      "number of points between the mp-th point and the tip of the airfoil\n, "
-      "cpar is the coefficient which dicates spacing of points, roughly "
-      "0.123\n, and tpar is "
-      "the coefficient which dictates the density of the tail. More "
-      "specifically, between the tail tip, and the edge of the mesh, there are "
-      "tpar * mp number of points\n");
+  printf("mp is the number of points between the horizontal median point and "
+         "the "
+         "point which connects the top left point of the mesh\n mp x "
+         "r_num/r_dem "
+         "is the number of points between the horizontal median point and the "
+         "point which connects the bottom left point of the mesh\n, gp is the "
+         "number of points between the mp-th point and the tip of the "
+         "airfoil\n, "
+         "cpar is the coefficient which dicates spacing of points, roughly "
+         "0.123\n, and tpar is "
+         "the coefficient which dictates the density of the tail. More "
+         "specifically, between the tail tip, and the edge of the mesh, there "
+         "are "
+         "tpar * mp number of points\n");
 };
 
 int main(int argc, char *argv[]) {
@@ -3134,7 +3172,8 @@ t2fix:
     fprintf(velocity, "\tclass       volVectorField;\n");
     fprintf(velocity, "\tobject      U;\n");
     fprintf(velocity, "}\n");
-    fprintf(velocity, "// * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    fprintf(velocity, "// * * * * * * * * * * * * * * * * * * * * * * * * * *
+    *
     * * * * * //\n\n"); fprintf(velocity, "dimensions      [0 1 -1 0 0 0
     0];\n\n"); fprintf(velocity, "\tinternalField   uniform (%.5Lf %.5Lf
     0);\n\n", 24 * cosl(pi * angle / 180.0), 24 * sinl(pi * angle / 180.0));
@@ -3185,10 +3224,13 @@ t2fix:
   backtrace = Mesh1.Tpar * mp;
   // backtrace = Tpar * mp
   cpar = Mesh1.Cpar / (long double)Mesh1.mp;
+  FILE *Gaustxt;
+  Gaustxt = fopen("ggaus.txt", "r");
+  Gauss G[100];
+  SetWeights(G, Gaustxt);
 
-  arcadjust(array, aero, &ncrit, &defaulter, Mesh1.IsSym);
-  foilcompute(points, foil1, aero, array, t3, backtrace, trace1, Mesh1.xR,
-              &Area);
+  arcadjust(array, aero, &ncrit, &defaulter, Mesh1.IsSym, t3, G);
+  foilcompute(points, foil1, aero, array, backtrace, trace1, Mesh1.xR, &Area);
   fprintf(areaf, "%.15Lf", Area);
 
   printf("\nMesh Data:\n");

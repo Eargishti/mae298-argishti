@@ -105,3 +105,47 @@ forceCoeffs forceCoeffs write:
 
 
 End
+
+
+  return sqrtl(
+      powl(1.0L +
+               ((-1.0L) * (t >= 0.0) + (1.0L) * (t < 0.0L)) * f3prime(T, a) *
+                   sinl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) +
+               ((-1.0L) * (t >= 0.0) + (1.0L) * (t < 0.0L)) * f3(T, a) *
+                   cosl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) *
+                   ((T < a.p * a.c) * theta1prime(T, a) +
+                    (T >= a.p * a.c) * theta2prime(T, a)),
+           2.0L) +
+      powl((T < a.p * a.c) * f1prime(T, a) + (T >= a.p * a.c) * f2prime(T, a) +
+               ((-1.0L) * (t >= 0.0L) + (1.0L) * (t < 0.0L)) * f3prime(T, a) *
+                   cosl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) +
+               ((-1.0L) * (t >= 0.0L) + (1.0L) * (t < 0.0L)) * f3(T, a) *
+                   sinl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) *
+                   ((T < a.p * a.c) * theta1prime(T, a) +
+                    (T >= a.p * a.c) * theta2prime(T, a)),
+           2.0L));
+  return sqrtl(
+      powl(1.0L +
+               ((-1.0L) * (t >= 0.0) + (1.0L) * (t < 0.0L)) * f3prime(T, a) *
+                   sinl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) +
+               ((-1.0L) * (t >= 0.0) + (1.0L) * (t < 0.0L)) * f3(T, a) *
+                   cosl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) *
+                   ((T < a.p * a.c) * theta1prime(T, a) +
+                    (T >= a.p * a.c) * theta2prime(T, a)),
+           2.0L) +
+      powl((T < a.p * a.c) * f1prime(T, a) + (T >= a.p * a.c) * f2prime(T, a) +
+               ((-1.0L) * (t >= 0.0L) + (1.0L) * (t < 0.0L)) * f3prime(T, a) *
+                   cosl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) +
+               ((-1.0L) * (t >= 0.0L) + (1.0L) * (t < 0.0L)) * f3(T, a) *
+                   sinl((T < a.p * a.c) * theta1(T, a) +
+                        (T >= a.p * a.c) * theta2(T, a)) *
+                   ((T < a.p * a.c) * theta1prime(T, a) +
+                    (T >= a.p * a.c) * theta2prime(T, a)),
+           2.0L));
