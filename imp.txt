@@ -68,3 +68,141 @@ paraview -style=default -stylesheet=/home/edgar/phys164/style.qss
 // discord.gg/wRBqM5KCTA
 
 /home/edgar/myFoamUtils/printCelldata
+
+
+void headsF(FILE *f1, const char *sting, const char *stong) {
+
+  fprintf(f1, "");
+  fprintf(f1, " /*--------------------------------*- C++ "
+              "-*----------------------------------*\\\n");
+  fprintf(f1, "  =========                 |\n");
+
+  fprintf(f1, "  \\\\      /  F ield         | OpenFOAM: The Open Source CFD "
+              "Toolbox\n");
+
+  fprintf(f1,
+          "   \\\\    /   O peration     | Website:  https://openfoam.org\n");
+  fprintf(f1, "    \\\\  /    A nd           | Version:  dev\n");
+  fprintf(f1, "     \\\\/     M anipulation  |\n");
+  fprintf(f1, "\\*-------------------------------------------------------------"
+              "--------------*/\n");
+  fprintf(f1, "FoamFile\n");
+  fprintf(f1, "{\n");
+  fprintf(f1, "    format      ascii;\n");
+  fprintf(f1, "    class       %s;\n", sting);
+  fprintf(f1, "    object      %s;\n", stong);
+  fprintf(f1, "}\n");
+  fprintf(f1, " // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * "
+              "* * * * * * * //");
+};
+void HeadsF(FILE *f1, const char *cLaSS, const char *oBjEcT,
+            const char *LoCation) {
+  fprintf(f1, "");
+  fprintf(f1, " /*--------------------------------*- C++ "
+              "-*----------------------------------*\\\n");
+  fprintf(f1, "  =========                 |\n");
+
+  fprintf(f1, "  \\\\      /  F ield         | OpenFOAM: The Open Source CFD "
+              "Toolbox\n");
+
+  fprintf(f1,
+          "   \\\\    /   O peration     | Website:  https://openfoam.org\n");
+  fprintf(f1, "    \\\\  /    A nd           | Version:  dev\n");
+  fprintf(f1, "     \\\\/     M anipulation  |\n");
+  fprintf(f1, "\\*-------------------------------------------------------------"
+              "--------------*/\n");
+  fprintf(f1, "FoamFile\n");
+  fprintf(f1, "{\n");
+  fprintf(f1, "    format      ascii;\n");
+  fprintf(f1, "    class       %s;\n", cLaSS);
+  fprintf(f1, "    location    %s;\n", LoCation);
+  fprintf(f1, "    object      %s;\n", oBjEcT);
+  fprintf(f1, "}\n");
+  fprintf(f1, " // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * "
+              "* * * * * * * //");
+};
+
+
+
+
+"\n"
+"application     simpleFoam;\n"
+"\n"
+"solver          incompressibleFluid;\n"
+"\n"
+"startFrom       startTime;\n"
+"\n"
+"startTime       0;\n"
+"\n"
+"stopAt          endTime;\n"
+"\n"
+"endTime         1500;\n"
+"\n"
+"deltaT          20;\n"
+"\n"
+"writeControl    timeStep;\n"
+"\n"
+"writeInterval   15;\n"
+"\n"
+"purgeWrite      0;\n"
+"\n"
+"writeFormat     ascii;\n"
+"\n"
+"writePrecision  5;\n"
+"\n"
+"writeCompression off;\n"
+"\n"
+"timeFormat      general;\n"
+"\n"
+"timePrecision   5;\n"
+"\n"
+"runTimeModifiable true;"
+"\n"
+
+
+
+
+
+
+19175
+
+"\n"
+"application     simpleFoam;\n"
+"\n"
+"solver          incompressibleFluid;\n"
+"\n"
+"startFrom       startTime;\n"
+"\n"
+"startTime       0;\n"
+"\n"
+"stopAt          endTime;\n"
+"\n"
+"endTime         1500;\n"
+"\n"
+"deltaT          20;\n"
+"\n"
+"writeControl    timeStep;\n"
+"\n"
+"writeInterval   15;\n"
+"\n"
+"purgeWrite      0;\n"
+"\n"
+"writeFormat     ascii;\n"
+"\n"
+"writePrecision  5;\n"
+"\n"
+"writeCompression off;\n"
+"\n"
+"timeFormat      general;\n"
+"\n"
+"timePrecision   5;\n"
+"\n"
+"runTimeModifiable true;"
+"\n"
+
+
+
+
+
+
+19175

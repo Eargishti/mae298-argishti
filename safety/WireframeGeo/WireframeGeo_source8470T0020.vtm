@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<VTKFile type="vtkMultiBlockDataSet" version="1.0" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <vtkMultiBlockDataSet>
+    <DataSet index="0" name="internalMesh" file="WireframeGeo_source8470T0020/WireframeGeo_source8470T0020_0.vtp"/>
+  </vtkMultiBlockDataSet>
+  <FieldData>
+    <DataArray type="Int8" Name="CasePath" NumberOfTuples="66" format="binary" RangeMin="0" RangeMax="118">
+      AQAAAACAAABCAAAASAAAAA==eJzTz8jPTdVPTUlPLNL3L0jNc/N39NVNSS3TLyktyS/KTMwp1s/MS87PLShKLS7OTMpJdcspzUzRdwVpcMvPzNFnAAAtbBg+
+    </DataArray>
+    <DataArray type="UInt32" Name="vtkBlockColors" NumberOfTuples="1" format="binary" RangeMin="0" RangeMax="0">
+      AQAAAACAAAAEAAAADAAAAA==eJxjYGBgAAAABAAB
+    </DataArray>
+    <DataArray type="Float64" Name="TimeValue" NumberOfTuples="1" format="binary" RangeMin="420" RangeMax="420">
+      AQAAAACAAAAIAAAADgAAAA==eJxjYAAChyoHAAH8APs=
+    </DataArray>
+  </FieldData>
+</VTKFile>

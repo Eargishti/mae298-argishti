@@ -1,0 +1,28 @@
+$$\sigma_{yy} = E \varepsilon_{yy} + \nu\sigma_{xx} + \nu \sigma_{zz}$$
+
+
+
+$$\varepsilon_{xx} = \dfrac{1}{E} \big( \sigma_{xx} - \nu ( E \varepsilon_{yy} + \nu\sigma_{xx} + \nu \sigma_{zz} + \sigma_{zz}) \big)$$
+
+
+$$E\varepsilon_{xx} = \sigma_{xx} \big(1 - \nu^2 \big) - \sigma_{zz} \big(\nu + \nu^2 \big) -E \nu \varepsilon_{yy}$$
+
+$$\sigma_{xx} = \dfrac{ E\varepsilon_{xx} +E\nu \varepsilon_{yy} + \sigma_{zz} (\nu + \nu^2) }{1 - \nu^2}$$
+
+$$\sigma_{yy} = E \varepsilon_{yy} + \nu \dfrac{ E\varepsilon_{xx} +E\nu \varepsilon_{yy} + \sigma_{zz} (\nu + \nu^2) }{1 - \nu^2} + \nu \sigma_{zz}$$
+
+
+$$\sigma_{zz} =\nu (\sigma_{xx} + \sigma_{yy})$$
+
+
+$$\sigma_{zz} =\nu \big( \dfrac{E \varepsilon_{xx} +E\nu \varepsilon_{yy} + \sigma_{zz} (\nu + \nu^2) }{1 - \nu^2} +  E \varepsilon_{yy} + \nu \dfrac{ E\varepsilon_{xx} +E\nu \varepsilon_{yy} + \sigma_{zz} (\nu + \nu^2) }{1 - \nu^2} + \nu \sigma_{zz} \big)$$
+
+$$\sigma_{zz} =E\varepsilon_{xx} \big( \dfrac{\nu}{1 - \nu^2} +\dfrac{\nu^2}{1-\nu^2}\big) +E \varepsilon_{yy} \big(1 + \dfrac{\nu^2}{1-\nu^2} + \dfrac{\nu^3}{1-\nu^2}\big) + \sigma_{zz}(\nu^2 \dfrac{1 + \nu}{1 - \nu^2} +\nu^3\dfrac{1+\nu}{1-\nu^2}+\nu\big)$$
+
+
+
+https://search.library.ucdavis.edu/permalink/01UCD_INST/1hjlc2p/cdi_knovel_primary_chapter_kt012D1C31
+
+
+
+My apologies for the mistake. But I realized that the article did imply which solver obtained the data when it mentioned the pressure-velocity model (implying rhoReactingFoam). However, it still did not provide numerical information on the mesh fineness. Also, the turbulence model was not specified entirely, because tau effective was present in the pressure-velocity formulation, but tau was only specified in the vorticity velocity formulation (which was not simulated in this article, but saved for future use), that being Newtonian only.

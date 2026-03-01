@@ -976,13 +976,95 @@ Matrix inverse(const Matrix *matrix) {
       Inv.Element[i][j] /= cof;
     };
   };
-  /* Matrix H;
-   H = Multiply(matrix, &Inv);
-   MatrixType m1 = Numerical;
-   fMatrixPrint(&H, NULL, &m1, stdout); */
 
   return Inv;
 };
+
+
+LongMatrix inverseLong(const LongMatrix *matrix){
+
+  LongMatrix Inv = {"", {0.0}, matrix->rows, matrix->columns};
+  if (matrix->rows != matrix->columns) {
+    printf("Inverse matrix rows aren't columns\n");
+  };
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  int l = 0;
+
+  for (i = 0; i < Inv.rows; i++) {
+
+    Inv.Element[i][i] = 1;
+  };
+  strcpy(Inv.name, matrix->name);
+  const char gog[] = "_Inv";
+  strcat(Inv.name, gog);
+  int pivotwasfound = 0;
+  int nonzerofound = 0;
+  int pivot = 0;
+  long double cof = 1;
+  LongMatrix U;
+ /* long double det1 = SimpleDet(matrix, &U, 0);
+  if (fabs(det1) <= tol) {
+    printf("Inverse not defined for 0-determinant matrix\n");
+    //    fLongMatrixPrint(matrix, NULL, &(MatrixType){Numerical}, stdout);
+    printf("det(%s) = %.15lf\n", matrix->name, det1);
+    exit(1);
+  }; */
+  U = *matrix;
+
+  long double rowMat[LONG_MAX_SIZE] = {0};
+  long double rowInv[LONG_MAX_SIZE] = {0};
+  for (j = 0; j < matrix->columns; j++) {
+    pivot = j;
+    pivotwasfound = 0;
+    for (int i = j; i < matrix->rows; i++) {
+      if (fabsl(U.Element[i][j]) <= LONG_TOL && !pivotwasfound) {
+        pivot++;
+        continue;
+      };
+      if (fabsl(U.Element[i][j]) >= LONG_TOL && !pivotwasfound) {
+        pivotwasfound = 1;
+        if (pivot > j) {
+          memcpy(rowMat, U.Element[j], LONG_MAX_SIZE * sizeof(long double));
+          memcpy(rowInv, Inv.Element[j], LONG_MAX_SIZE * sizeof(long double));
+          memcpy(U.Element[j], U.Element[pivot], LONG_MAX_SIZE * sizeof(long double));
+          memcpy(Inv.Element[j], Inv.Element[pivot], LONG_MAX_SIZE * sizeof(long double));
+          memcpy(U.Element[pivot], rowMat, LONG_MAX_SIZE * sizeof(long double));
+          memcpy(Inv.Element[pivot], rowInv, LONG_MAX_SIZE * sizeof(long double));
+        };
+        for (l = 0; l < matrix->rows; l++) {
+          if (l == j) {
+            continue;
+          };
+          cof = U.Element[l][j] / U.Element[j][j];
+          for (k = j; k < U.columns; k++) {
+            U.Element[l][k] -= cof * U.Element[j][k];
+          };
+          for (k = 0; k < Inv.columns; k++) {
+            Inv.Element[l][k] -= cof * Inv.Element[j][k];
+          };
+        };
+        goto InvexL;
+      };
+    };
+
+  InvexL:
+  };
+
+  for (i = 0; i < U.rows; i++) {
+    cof = U.Element[i][i];
+    U.Element[i][i] = 1.0;
+    for (j = 0; j < U.columns; j++) {
+      Inv.Element[i][j] /= cof;
+    };
+  };
+
+  return Inv;
+
+
+};;
+
 
 void Add(Matrix *A, Matrix *B) {
   Matrix C;
@@ -1162,6 +1244,18 @@ void SymmetricUpperT(Matrix *matrix) {
     };
   };
 };
+
+
+void SymmetricUpperLongT(LongMatrix *matrix) {
+  int i = 0;
+  int j = 0;
+  for (j = 0; j < matrix->rows; j++) {
+    for (i = 0; i < j; i++) {
+      matrix->Element[j][i] = matrix->Element[i][j];
+    };
+  };
+};
+
 
 void SymmetricSmallUT(SmallMatrix *matrix) {
   int i = 0;

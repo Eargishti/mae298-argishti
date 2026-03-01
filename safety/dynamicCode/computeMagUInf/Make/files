@@ -1,0 +1,6 @@
+# dynamicCode:
+# SHA1 = 3c67dff08d2577d0ec2a65ce9a683703864de19c
+
+codedFunctionObjectTemplate.C
+
+LIB = $(PWD)/../platforms/$(WM_OPTIONS)/lib/libcomputeMagUInf_3c67dff08d2577d0ec2a65ce9a683703864de19c

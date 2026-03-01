@@ -149,3 +149,47 @@ End
                    ((T < a.p * a.c) * theta1prime(T, a) +
                     (T >= a.p * a.c) * theta2prime(T, a)),
            2.0L));
+
+
+/*
+  long double angle;
+  printf("Please enter the angle of attack, in degrees less than 90: ");
+  scanf("%Lf", &angle);
+  long double pi = 3.141592653589;
+  FILE *velocity;
+
+  velocity = fopen("U", "w");
+  fprintf(velocity, "FoamFile\n");
+  fprintf(velocity, "{\n");
+  fprintf(velocity, "\tformat      ascii;\n");
+  fprintf(velocity, "\tclass       volVectorField;\n");
+  fprintf(velocity, "\tobject      U;\n");
+  fprintf(velocity, "}\n");
+  fprintf(velocity, "// * * * * * * * * * * * * * * * * * * * * * * * * * *
+  *
+  * * * * * //\n\n"); fprintf(velocity, "dimensions      [0 1 -1 0 0 0
+  0];\n\n"); fprintf(velocity, "\tinternalField   uniform (%.5Lf %.5Lf
+  0);\n\n", 24 * cosl(pi * angle / 180.0), 24 * sinl(pi * angle / 180.0));
+  fprintf(velocity, "boundaryField\n");
+  fprintf(velocity, "{\n");
+  fprintf(velocity, "    inlet\n");
+  fprintf(velocity, "    {\n");
+  fprintf(velocity, "        type            freestreamVelocity;\n");
+  fprintf(velocity, "        freestreamValue $internalField;\n");
+  fprintf(velocity, "    }\n\n");
+  fprintf(velocity, "    outlet\n");
+  fprintf(velocity, "    {\n");
+  fprintf(velocity, "        type            freestreamVelocity;\n");
+  fprintf(velocity, "        freestreamValue $internalField;\n");
+  fprintf(velocity, "    }\n\n");
+  fprintf(velocity, "    walls\n");
+  fprintf(velocity, "    {\n");
+  fprintf(velocity, "        type            noSlip;\n");
+  fprintf(velocity, "    }\n\n");
+  fprintf(velocity, "    frontAndBack\n");
+  fprintf(velocity, "    {\n");
+  fprintf(velocity, "        type            empty;\n");
+  fprintf(velocity, "    }\n");
+  fprintf(velocity, "}\n");
+*/
+

@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  dev
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 2 -1 0 0 0 0];
+
+internalField   uniform 0.14000000000000001332;
+
+boundaryField
+{
+    FrontAndBack
+    {
+        type            empty;
+    }
+    Aerofoil
+    {
+        type            nutUSpaldingWallFunction;
+        value           uniform 0;
+    }
+    Inlet
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+    Outlet
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+    Top1
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+    Bottom1
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+    Top2
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+    Bottom2
+    {
+        type            freestream;
+        freestreamValue uniform 0.14000000000000001332;
+        value           uniform 0.14000000000000001332;
+    }
+}
+
+
+// ************************************************************************* //

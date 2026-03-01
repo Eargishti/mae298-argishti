@@ -5,10 +5,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAX_SIZE 50
+#define MAX_SIZE 100
 #define MAX_NUMBER_OF_MATRICES 40
 #define BUFFER_SIZE 256
 #define tol 1E-13
+#define LONG_TOL 1E-25
+#define LONG_MAX_SIZE 200
 #define VARIABLE_SIZE 8
 #define MAX_NUMBER_OF_ELEMENTS 10
 
@@ -20,6 +22,17 @@ typedef struct {
   uint8_t columns;
 
 } Matrix;
+
+typedef struct {
+
+  char name[BUFFER_SIZE];
+  long double Element[LONG_MAX_SIZE][LONG_MAX_SIZE];
+  size_t rows;
+  size_t columns;
+
+} LongMatrix;
+
+
 
 typedef struct {
 
@@ -122,6 +135,11 @@ SmallMatrix Smallelk(double A, double Izz, double Iyy, double J, double E, doubl
 
 SmallMatrix SmallGammaMat(double beta, double xaxis[3]);
 
+void SymmetricUpperT(Matrix *matrix);
+
+void SymmetricUpperLongT(LongMatrix *matrix);
+
+LongMatrix inverseLong(const LongMatrix *matrix);
 
 //Project rows by columns,
 //concen, fixity, 
